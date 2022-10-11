@@ -1,0 +1,59 @@
+<html>
+    <head>
+        <title>prueba</title>
+       
+        <script type="text/javascript" >
+            var ip;
+            function getIP(json) {
+               ip = json.ip;
+            }
+
+            document.addEventListener('DOMContentLoaded',()=>{
+                let elements=[]
+                let heightTotal = 0;
+
+                var header = Array.from(document.getElementsByTagName('header'));
+
+                var elementsAux = Array.from(document.getElementsByTagName('section'));
+
+                elements = [...header,...elementsAux]
+
+                console.log(elements);
+                
+                elements.forEach(element => {
+                    elements = [...elements, {nombre:element.id, mouseOver:false}]
+                    element.onmouseover = function(e){
+                        let index = elements.findIndex(x=>x.nombre===e.target.id);
+                        elements[index] = {...elements[index],mouseOver:true}
+
+                    }
+                });
+                console.log(ip)
+            });
+        </script>   
+        
+        <script type="application/javascript" src="https://api.ipify.org?format=jsonp&callback=getIP"></script>
+        <style>
+
+            {{ style }}
+            
+        </style>
+    </head>
+    <body>
+        <header id="header">
+            header
+        </header>
+        <section id="slide">
+            seccion 1
+        </section>
+        <section id="about">
+            seccion 2
+        </section>
+        <section id="action" >
+            seccion 3
+        </section>
+        <section id="Beneficios">
+            seccion 4
+        </section>
+    </body>
+</html>
