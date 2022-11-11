@@ -2,15 +2,14 @@
 {% from 'bootstrap5/form.html' import render_field, render_form, render_form_row %}
 
 {% block title %}
-
-{% enblock %}
+{{datos.disenios.nombre}}
+{% endblock %}
 
 {% block style %}
-    <style >
-        {{ style }}
-    </style>
+    
 {% endblock %}
-{% block codigo js %}
+
+{% block codigojs %}
     <script type="text/javascript" >
         var ip = '';
         function getIP(json) {
@@ -29,28 +28,27 @@
             elementosSelect.push(e.target.id)
         }
 
-        function setIdAndSecciones(disenioParam,seccions){
-            idLanding = disenioParam[0];
-            secciones = seccions;
-            disenio = disenioParam
+        function setIds(disenio){
+            idLanding = disenio.idDisenio;
+            idFormumlario=disenio.idFormulario;
         }
 
         function sendSubmit(){
             let formulario;
-            if(disenio[7]=='1')
+            if(idFormumlario==1)
                 formulario = 'basico';
             
-            if(disenio[7]=='2')
+            if(idFormumlario==2)
                 formulario = 'cita';
             
-            if(disenio[7]=='3')
+            if(idFormumlario==3)
                 formulario = 'descarga';
 
-            if(disenio[7]=='4')
+            if(idFormumlario==4)
                 formulario = 'reservacion';
 
 
-            fetch('http://127.0.0.1:5000/registros/almacenaFormulario',{
+            fetch('http://127.0.0.1:4000/registros/almacenaFormulario',{
             'method': 'POST',
                 headers:{
                     'Content-Type':'application/json'
@@ -75,12 +73,8 @@
         });
 
         document.addEventListener('DOMContentLoaded',()=>{
-            let ipAux;
-            fetch(`http://127.0.0.1:5000/consultas/vistas/${idLanding}`)
-            .then(res => res.json())
-            .then(data => ipAux = data.ip)
-            .catch(err => console.log(err));
-
+            console.log(localStorage.getItem('res'))
+            let elementsScroll=[];
             const date = new Date();
             
             let day = date.getDate();
@@ -102,7 +96,6 @@
                         elementsScroll[index] = {...elementsScroll[index],mouseOver:true}
                 }
             });
-            
            
             let interval = setInterval(()=>{
                 time++;
@@ -110,25 +103,24 @@
 
         });
 
-        window.addEventListener('unload', e =>{
-            /*
-            if(ipAux !== ip) {
-                fetch('http://127.0.0.1:5000/registros/almacenaVistas',{
-                'method': 'POST',
-                    headers:{
-                        'Content-Type':'application/json'
-                    },
-                    body:JSON.stringify({
-                        'idLanding':idLanding,
-                        'time':time,
-                        'currentDate':currentDate,
-                        'ip':ip
-                    })})
-                    .then(res => res.json)
-                    .then(data=>console.log(data))
-                    .catch(err=>console.log(err));
-            } 
-            fetch('http://127.0.0.1:5000/registros/almacenaClic',{
+        window.onbeforeunload = function(){
+
+            fetch('http://127.0.0.1:4000/registros/almacenaVistas',{
+            'method': 'POST',
+                headers:{
+                    'Content-Type':'application/json'
+                },
+                body:JSON.stringify({
+                    'idLanding':idLanding,
+                    'time':time,
+                    'currentDate':currentDate,
+                    'ip':ip
+                })
+                })
+                .then(res=>localStorage.setItem('res',res))
+                .catch(err=>console.log(err));
+
+                fetch('http://127.0.0.1:4000/registros/almacenaClic',{
                 'method': 'POST',
                 headers:{
                     'Content-Type':'application/json'
@@ -137,12 +129,13 @@
                     'idLanding':idLanding,
                     'elementosSelect':elementosSelect,
                     'currentDate':currentDate
-                })})
+                }),
+                keepalive: true})
                 .then(res => res.json)
                 .then(data=>console.log(data))
                 .catch(err=>console.log(err));
 
-            fetch('http://127.0.0.1:5000/registros/almacenaMouse',{
+            fetch('http://127.0.0.1:4000/registros/almacenaMouse',{
                 'method': 'POST',
                 headers:{
                     'Content-Type':'application/json'
@@ -151,12 +144,13 @@
                     'idLanding':idLanding,
                     'coords':coords,
                     'currentDate':currentDate
-                })})
+                }),
+                keepalive: true})
                 .then(res => res.json)
                 .then(data=>console.log(data))
                 .catch(err=>console.log(err));
 
-            fetch('http://127.0.0.1:5000/registros/almacenaScroll',{
+            fetch('http://127.0.0.1:4000/registros/almacenaScroll',{
                 'method': 'POST',
                 headers:{
                     'Content-Type':'application/json'
@@ -165,47 +159,48 @@
                     'idLanding':idLanding,
                     'secciones':elementsScroll,
                     'currentDate':currentDate
-                })})
+                }),})
+                keepalive: true
                 .then(res => res.json)
                 .then(data=>console.log(data))
-                .catch(err=>console.log(err));*/
-        });
+                .catch(err=>console.log(err));
+        }
         
     </script>
 {% endblock %}
 
-<body onload="setIdAndSecciones({{disenio|tojson}},{{secciones|tojson}})">
+<body onload="setIds({{datos.disenios|tojson}})">
 {% block body %}
-<div class="mw-preload"></div>
-{% if disenio[2] == '1' %}
-	<header class="mw_top-header-01 mb" id="mw_top01">
+
+{% if datos.disenios.idHeader == 1 %}
+	<header class="mw_top-header-01 mb-0" id="mw_top01">
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col-sm-4 top-left d-none d-md-block">
 					<ul>
-						<li><a id="mw_top_mail_01" href="mailto:{{header[0]}}" onclick="click()"><span><i class="fal fa-envelope"></i></span> Escribenos: contacto<i class="fal fa-at"></i>{{header[0]}}</a></li>
+						<li><a id="mw_top_mail_01" href="mailto:{{datos.contenido.contacto.correo}}" onclick="click()"><span><i class="fal fa-envelope"></i></span> Escribenos: {{datos.contenido.contentHeader.correo}}<i class="fal fa-at"></i></a></li>
 					</ul>
 				</div>
 				<div class="col-sm-4 top-center d-none d-md-block">
 					<ul>
-						<li><a id="mw_top_whats_01" onclick="click()" href="https://wa.me/{{contenidoHeader['whatsapp']}}?text=Más%20información"><span><i class="fab fa-whatsapp"></i></span> Envíanos un Whatsapp</a></li>
+						<li><a id="mw_top_whats_01" onclick="click()" href="https://wa.me/{{datos.contenido.contacto.whatsapp}}?text=Más%20información"><span><i class="fab fa-whatsapp"></i></span> Envíanos un Whatsapp</a></li>
 					</ul>
 				</div>
 				<div class="col-sm-4 top-right">
 					<ul>
-						<li><a id="mw_top_phone_01" onclick="click()" href="tel:{{header[1]}}"><span><i class="fal fa-phone"></i></span> Llamanos {{header[1]}}</a></li>
+						<li><a id="mw_top_phone_01" onclick="click()" href="tel:{{datos.contenido.contacto.telefono}}"><span><i class="fal fa-phone"></i></span> Llamanos {{datos.contenido.contentHeader.telefono}} </a></li>
 					</ul>
 				</div>
 			</div>
 		</div>
 	</header>
 {% endif %}
-{% if disenio[2] == '2' %}
-	<header class="mw_top-header-02 mb" id="mw_top02">
+{% if datos.disenios.idHeader == 2 %}
+	<header class="mw_top-header-02 mb-0" id="mw_top02">
 		<div class="container">
 			<div class="row align-items-center">
 				<div class="logo col-5 col-sm-2">
-					<img src="{{header[2]}}" class="img-fluid" alt="Logotipo">
+					<img src="" class="img-fluid" alt="Logotipo">
 				</div>
 				<div class="col-7 col-sm-10">
 					<div class="row align-items-center">
@@ -213,7 +208,7 @@
 							<div class="row">
 								<div class="icon col-2"><i class="fal fa-map-marker-alt"></i></div>
 								<div class="info col-10">
-								  <p>{{header[3]}}</p> 
+								  <p>{{datos.contenido.contentHeader.direccion}}</p> 
 								  <p>Morelia, Michoacán 58260</p>
 								</div>
 							</div>
@@ -222,7 +217,7 @@
 							<div class="row">
 								<div class="icon col-2"><i class="fal fa-phone"></i></div>
 								<div class="info col-10">
-									<p><a onclick="click()" id="mw_top-phone02" href="tel:{{header[1]}}">{{header[1]}}</a></p>
+									<p><a onclick="click()" id="mw_top-phone02" href="tel:{{datos.contenido.contacto.telefono}}">{{datos.contenido.contentHeader.telefono}}</a></p>
 									<p>Llámanos ahora</p>
 								</div>
 							</div>
@@ -232,7 +227,7 @@
 								<div class="icon col-2"><i class="fal fa-calendar-alt"></i></div>
 								<div class="info col-10">
 									<p>Haz tu Cita</p>
-									<p><a onclick="click()" id="mw_top-mail02" href="mailto:{{header[0]}}">agendar<i class="fal fa-at"></i>{{header[0]}}</a></p>
+									<p><a onclick="click()" id="mw_top-mail02" href="mailto:{{datos.contenido.contacto.correo}}">agendar<i class="fal fa-at"></i>{{datos.contenido.contentHeader.correo}}</a></p>
 								</div>
 							</div>
 						</div>
@@ -242,29 +237,29 @@
 		</div>
 	</header>
 {% endif %}
-{% if disenio[2] == '3' %}
-	<header class="mw_top-header-03 mb" id="mw_top03">
+{% if datos.disenios.idHeader == 3 %}
+	<header class="mw_top-header-03 mb-0" id="mw_top03">
 		<div class="container">
 			<div class="row align-items-center">
 				<div class="logo col-5 col-sm-2">
-					<img src="{{header[3]}}" class="img-fluid" alt="Logotipo">
+					<img src="" class="img-fluid" alt="Logotipo">
 				</div>
 				<div class="col-7 col-sm-4 offset-sm-6">
 					<div class="row align-items-center">
 						<div class="icon col-2 col-lg-1"><i class="fal fa-phone-alt"></i></div>
-						<div class="info col-10 col-lg-11"> Llámanos hoy mismo <br class="d-block d-md-none"><a onclick="click()" id="mw_top-tel03" href="tel:{{header[1]}}">{{header[1]}}</a></div>
+						<div class="info col-10 col-lg-11"> Llámanos hoy mismo <br class="d-block d-md-none"><a onclick="click()" id="mw_top-tel03" href="tel:{{datos.contenido.contacto.telefono}}">{{datos.contenido.contentHeader.telefono}}</a></div>
 					</div>
 				</div>
 			</div>
 		</div>
 	</header>
 {% endif %}
-{% if disenio[2] == '4' %}
-	<header class="mw_top-header-04 mb" id="mw_top04">
+{% if datos.disenios.idHeader == 4 %}
+	<header class="mw_top-header-04 mb-0" id="mw_top04">
 		<div class="container">
 			<div class="row align-items-center">
 				<div class="logo col-5 col-sm-2">
-					<img src="{{header[3]}}" class="img-fluid" alt="Logotipo">
+					<img src="" class="img-fluid" alt="Logotipo">
 				</div>
 				<div class="col-7 col-sm-3 offset-sm-7">
 					<div class="row align-items-center">
@@ -274,7 +269,7 @@
 						<div class="col-10">
 							<div class="info">
 							   <p>Escribenos:</p>
-							   <p><a onclick="click()" id="mw_top_mail_04" href="mailto:{{header[0]}}">hola<i class="fal fa-at"></i>{{header[0]}}</a></p>
+							   <p><a onclick="click()" id="mw_top_mail_04" href="mailto:{{datos.contenido.contacto.correo}}">{{datos.contenido.contentHeader.correo}}<i class="fal fa-at"></i></a></p>
 							</div>
 						</div>
 					</div>
@@ -283,23 +278,25 @@
 		</div>
 	</header>
 {% endif %}
-{% if disenio[3] == '1' %}
+{% if datos.disenios.idSlide == 1 %}
 <section class="mw_slide-01 mb" id="mw_slide01">
-    <div class="mw-cover-bg mw-overlay" {{contenidoSlide['imagenFondo']}} >
+    <div class="mw-cover-bg mw-overlay"  >
           <div class="container">
             <div class="row">
                   <div class="col-10 offset-2 col-sm-3 offset-sm-0 mt03">
-                    <img src="{{contenidoSlide['logo']}}" class="img-fluid" alt="">
+                    <img src="" class="img-fluid" alt="">
                   </div>
                   <div class="col-sm-10 offset-sm-1">
                     <div class="d-flex text-center align-items-center justify-content-center height-cover">
                           <div class="inner-content">
-                            <h1 class="cta">{{contenidoSlide['cta']}</h1>
-                            <h2 class="sub-cta">{{contenidoSlide['refuerzo']}}</h2>
+                            <h1 class="cta">{{datos.contenido.contentSlide.cta}}</h1>
+                            <h2 class="sub-cta">{{datos.contenido.contentSlide.rescate}}</h2>
+                            <div class="btn-cta">
 
-                            <a onclick="click()" id="myBtn01" {{contenidoSlide['colorBoton']}} class="col-sm-4 offset-sm-4 btn btn-style-01 d-none d-md-block">{{contenidoSlide['textoBoton']}}</a>
-                            <a onclick="click()" id="mw_slide-phone01" href="tel:{{header[1]}}" class="col-10 offset-1 btn btn-style-01 d-block d-md-none">
-                                  <i class="fal fa-phone-alt"></i> Llamanos Ahora</a>
+                                <a onclick="click()" id="myBtn01"  class="btn btn-style-01 offset-sm-3 d-none d-md-block">{{datos.contenido.contentSlide.txtBtn}}</a>
+                                <a onclick="click()" id="mw_slide-phone01" href="tel:{{datos.contenido.contacto.telefono}}" class="col-10 offset-1 btn btn-style-01 d-block d-md-none">
+                                    <i class="fal fa-phone-alt"></i> {{datos.contenido.contentSlide.txtBtn}}</a>
+                            </div>
                           </div>
                     </div>
                   </div>
@@ -308,31 +305,32 @@
     </div>
   </section>
 {% endif %}
-{% if disenio[3] == '2' %}
+{% if datos.disenios.idSlide == 2 %}
 <section class="mw_slide-02 mb" id="mw_slide02">
-    <div class="mw-cover-bg mw-overlay" {{contenidoSlide['imagenFondo']}}>
+    <div class="mw-cover-bg mw-overlay" src=''>
           <div class="container">
             <div class="row">
                   <div class="col-10 offset-2 col-sm-3 offset-sm-0 mt03">
-                    <img src="{{contenidoSlide['logotipo']}}" class="img-fluid" alt="">
+                    <img src="" class="img-fluid" alt="">
                   </div>
             </div>
             <div class="row">
                 <div class="col-sm-9">
                     <div class="d-flex align-items-center justify-content-start height-cover">
                           <div class="inner-content">
-                            <h1 class="cta">contenidoSlide['cta']</h1>
-                            <h2 class="sub-cta">contenidoSlide['refuerzo']</h2>
-
-                            <a id="myBtn02" onclick="click()" {{contenidoSlide['colorBoton']}} class="col-md-5 btn btn-style-01 d-md-block d-none">{{contenidoSlide['textoBoton']}}</a>
-                            <a href="tel:{{header[1]}}" class="col-10 offset-1 btn btn-style-01 d-block d-md-none">
-                                  <i class="fal fa-phone-alt"></i> Llamanos Ahora</a>
+                            <h1 class="cta">{{datos.contenido.contentSlide.cta}}</h1>
+                            <h2 class="sub-cta">{{datos.contenido.contentSlide.rescate}}</h2>
+                            <div class="btn-cta">
+                                <a id="myBtn02" onclick="click()" class="d-md-block d-none btn btn-style-01">{{datos.contenido.contentSlide.txtBtn}}</a>
+                                <a href="tel:{{datos.contenido.contacto.telefono}}" class="col-10 offset-1 btn btn-style-01 d-block d-md-none">
+                                    <i class="fal fa-phone-alt"></i>{{datos.contenido.contentSlide.txtBtn}}</a>
+                            </div>
                           </div>
                     </div>
                   </div>
                 <div class="col-sm-3 d-none d-md-block">
                     <div class="d-flex align-items-end height-cover">
-                        <img src="{{contenidoSlide['heroe']}}" class="img-fluid" alt="">
+                        <img src="" class="img-fluid" alt="">
                     </div>
                 </div>
             </div>
@@ -340,30 +338,31 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[3] == '3' %}
+{% if datos.disenios.idSlide == 3 %}
 <section class="mw_slide-03 mb" id="mw_slide03">
-    <div class="mw-cover-bg mw-overlay" {{contenidoSlide['imagenFondo']}}>
+    <div class="mw-cover-bg mw-overlay" >
           <div class="container">
             <div class="row">
                   <div class="col-10 offset-2 col-sm-3 offset-sm-0 mt03">
-                    <img src="{{contenidoSlide['logotipo']}}" class="img-fluid" alt="">
+                    <img src="" class="img-fluid" alt="">
                   </div>
             </div>
             <div class="row">
                 <div class="col-sm-3 d-none d-md-block">
                     <div class="d-flex align-items-end height-cover">
-                        <img src="{{contenidoSlide['heroe']}}" class="img-fluid" alt="">
+                        <img src="" class="img-fluid" alt="">
                     </div>
                 </div>
                 <div class="col-sm-9">
                     <div class="d-flex text-center align-items-center justify-content-start height-cover">
                           <div class="inner-content">
-                            <h1 class="cta">{{contenidoSlide['cta']}</h1>
-                            <h2 class="sub-cta">{{contenidoSlide['refuerzo']}}</h2>
-
-                            <a id="myBtn03" onclick="click()" {{contenidoSlide['colorBoton']}} class="col-md-6 offset-md-3 btn btn-style-01 d-md-block d-none">{{contenidoSlide['textoBoton']}</a>
-                            <a href="tel:{{header[1]}}" class="col-10 offset-1 btn btn-style-01 d-block d-md-none">
-                                  <i class="fal fa-phone-alt"></i> Llamanos Ahora</a>
+                            <h1 class="cta">{{datos.contenido.contentSlide.cta}}</h1>
+                            <h2 class="sub-cta">{{datos.contenido.contentSlide.rescate}}</h2>
+                            <div class="btn-cta">
+                                <a id="myBtn03" onclick="click()"  class="offset-md-3 btn btn-style-01 d-md-block d-none">{{datos.contenido.contentSlide.txtBtn}}</a>
+                                <a href="tel:{{datos.contenido.contacto.telefono}}" class="col-10 offset-1 btn btn-style-01 d-block d-md-none">
+                                    <i class="fal fa-phone-alt"></i> {{datos.contenido.contentHeader.txtBtn}}</a>
+                            </div>
                           </div>
                     </div>
                   </div>
@@ -372,28 +371,30 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[3] == '4' %}
+{% if datos.disenios.idSlide == 4 %}
 <section class="mw_slide-04 mb" id="mw_slide04">
-    <div class="mw-cover-bg" {{contenidoSlide['imagenFondo']}}>
+    <div class="mw-cover-bg" >
           <div class="container">
             <div class="row align-items-center">
                   <div class="col-sm-6">
                     <div class="col-10 offset-2 col-sm-12 offset-sm-0 mt03">
-                          <img src="{{contenidoSlide['logotipo']}}" class="img-fluid" alt="">
+                          <img src="" class="img-fluid" alt="">
                     </div>
                     <div class="d-flex align-items-center height-cover">
                           <div class="inner-content">
-                            <h1 class="cta">{{contenidoSlide['cta']}</h1>
-                            <h2 class="sub-cta">{{contenidoSlide['refuerzo']}}</h2>
-                            <a href="tel:{{header[1]}}" onclick="click()" {{contenidoSlide['colorBoton']}} class="col-10 offset-1 btn btn-style-01 btn-lg d-block d-sm-none mt02">
-                              <i class="fal fa-phone-alt"></i> Llamanos Ahora</a>
+                            <h1 class="cta">{{datos.contenido.contentSlide.cta}}</h1>
+                            <h2 class="sub-cta">{{datos.contenido.contentSlide.rescate}}</h2>
+                            <div class="btn-cta">
+                            <a href="tel:{{datos.contenido.contacto.telefono}}" onclick="click()"  class="col-10 offset-1 btn btn-style-01 btn-lg d-block d-sm-none mt02">
+                              <i class="fal fa-phone-alt"></i> {{datos.contenido.contentSlide.txtBtn}}</a>
+                              </div>
                           </div>
                     </div>
                   </div>
                   <div class="col-12 offset-0 col-md-5 offset-md-1 col-lg-4 offset-lg-2">
                     <form class="mw_form-02" action="/registrarInfoLP/{{disenio[0]}}">{{ opcionFormulario.csrf_token }}
-                          <h4 class="text-center">{{contenidoSlide['ctaFormulario']}}</h4>
-                          <h5>{{contenidoSlide['refuerzoFormulario']}</h5>
+                          <h4 class="text-center"></h4>
+                          <h5></h5>
                             <div class="form-group">
                                 {{render_field(opcionFormulario.nombre, placeholder="Nombre completo", class="form-control")}}
                             </div>
@@ -413,48 +414,50 @@
     </div>
   </section>
 {% endif %}
-{% if disenio[4] == '1' %}
+{% if datos.disenios.idAbout == 1 %}
 <section class="mw_about-01 mt03 mb" id="mw_about01">
     <div class="container">
         <div class="row">
             <div class="col-sm-5 offset-sm-1">
                 <div class="title-section">
-                    <h2>{contenidoAbout['titulo']</h2>
+                    <h2>{{datos.contenido.contentAbout.titulo}}</h2>
                 </div>
                 <div class="content-section">
-                    <p>{{contenidoAbout['parrafo']}</p>
+                    <p>{{datos.contenido.contentAbout.introNosotros}}</p>
+                    <p>{{datos.contenido.contentAbout.acerca}}</p>
                     <ul>
-                        <li>{{contenidoAbout['textoEnriquecido1']}}</li>
-                        <li>{{contenidoAbout['textoEnriquecido2']}}</li>
-                        <li>{{contenidoAbout['textoEnriquecido3']}}</li>
+                        <li></li>
+                        <li></li>
+                        <li></li>
                     </ul>
                 </div>
             </div>
             <div class="col-sm-5 offset-sm-1">
-                <img src="{{contenidoAbout['imagen']}}" class="img-fluid" alt="">
+                <img src="" class="img-fluid" alt="">
             </div>
         </div>
     </div>
 </section>
 {% endif %}
-{% if disenio[4] == '2' %}
+{% if datos.disenios.idAbout == 2 %}
 <section class="mw_about-02 mb" id="mw_about02">
     <div class="container">
         <div class="row">
             <div class="col-sm-5">
-                <img src="{{contenidoAbout['imagen']}}" class="img-fluid" alt="">
+                <img src="" class="img-fluid" alt="">
             </div>
             <div class="col-sm-5 offset-sm-1">
                 <div class="title-section">
-                    <h2>{{contenidoAbout['titulo']}}</h2>
+                    <h2>{{datos.contenido.contentAbout.titulo}}</h2>
                 </div>
                 <div class="content-section">
-                    <p>{{contenidoAbout['parrafo']}</p>
-
+                    <p>{{datos.contenido.contentAbout.introNosotros}}</p>
+                    
+                    <p>{{datos.contenido.contentAbout.acerca}}</p>
                     <ul>
-                        <li>{{contenidoAbout['textoEnriquecido1']}}</li>
-                        <li>{{contenidoAbout['textoEnriquecido2']}}</li>
-                        <li>{{contenidoAbout['textoEnriquecido3']}}</li>
+                        <li></li>
+                        <li></li>
+                        <li></li>
                     </ul>
                 </div>
             </div>
@@ -462,28 +465,28 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[4] == '3' %}
+{% if datos.disenios.idAbout == 3 %}
 <section class="mw_about-03 mb" id="mw_about03">
     <div class="container">
         <div class="row">
             <div class="col-sm-5 offset-sm-1">
                 <div class="title-section">
-                    <h2>{{contenidoAbout['titulo']}</h2>
+                    <h2>{{datos.contenido.contentAbout.titulo}}</h2>
                 </div>
                 <div class="content-section">
-                    <p>{{contenidoAbout['parrafo']}</p>
-
+                    <p>{{datos.contenido.contentAbout.introNosotros}}</p>
+                    <p>{{datos.contenido.contentAbout.acerca}}</p>
                     <ul>
-                        <li>{{contenidoAbout['textoEnriquecido1']}}</li>
-                        <li>{{contenidoAbout['textoEnriquecido2']}}</li>
-                        <li>{{contenidoAbout['textoEnriquecido3']}}</li>
+                        <li></li>
+                        <li></li>
+                        <li></li>
                     </ul>
                 </div>
             </div>
             <div class="col-sm-5 offset-sm-1">
                 <div class="video-featured">
                     <img src="assets/images/1920b.png" class="img-fluid" alt="">
-                    <a id="mw_about_play_03" class="play-video" data-fancybox href="{{contenidoAbout['imagen']}}">
+                    <a id="mw_about_play_03" class="play-video" data-fancybox href="">
                         <i class="fal fa-play-circle"></i>
                     </a>
                 </div>
@@ -492,29 +495,30 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[4] == '4' %}
+{% if datos.disenios.idAbout == 4 %}
 <section class="mw_about-04 mb" id="mw_about04">
     <div class="container">
         <div class="row">
             <div class="col-sm-5">
                 <div class="video-featured">
                     <img src="assets/images/1920b.png" class="img-fluid" alt="">
-                    <a id="mw_about_play_04" class="play-video" data-fancybox href="{{contenidoAbout['imagen']}}">
+                    <a id="mw_about_play_04" class="play-video" data-fancybox href="">
                         <i class="fal fa-play-circle"></i>
                     </a>
                 </div>
             </div>
             <div class="col-sm-5 offset-sm-1">
                 <div class="title-section">
-                    <h2>{{contenidoAbout['titulo']}}</h2>
+                    <h2>{{datos.contenido.contentAbout.titulo}}</h2>
                 </div>
                 <div class="content-section">
-                    <p>{{contenidoAbout['parrafo']}}</p>
+                    <p>{{datos.contenido.contentAbout.introNosotros}}</p>
+                    <p>{{datos.contenido.contentAbout.acerca}}</p>
 
                     <ul>
-                        <li>{{contenidoAbout['textoEnriquecido1']}}</li>
-                        <li>{{contenidoAbout['textoEnriquecido2']}}</li>
-                        <li>{{contenidoAbout['textoEnriquecido3']}}</li>
+                        <li></li>
+                        <li></li>
+                        <li></li>
                     </ul>
                 </div>
             </div>
@@ -522,37 +526,37 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[4] == '5' %}
+{% if datos.disenios.idAbout == 5 %}
 <section class="mw_about-05 mb" id="mw_about05">
     <div class="container">
         <div class="row">
             <div class="col-sm-5">
                 <div class="title-section">
-                    <h2>{{contenidoAbout['titulo']}}</h2>
+                    <h2>{{datos.contenido.contentAbout.titulo}}</h2>
                 </div>
                 <div class="content-section">
-                    <p>{{contenidoAbout['parrafo']}}</p>
-                    <p>{{contenidoAbout['parrafo2']}} </p>
+                    <p>{{datos.contenido.contentAbout.introNosotros}}</p>
+                    <p>{{datos.contenido.contentAbout.acerca}}</p>
 
                     <ul>
-                        <li>{{contenidoAbout['textoEnriquecido1']}}</li>
-                        <li>{{contenidoAbout['textoEnriquecido2']}}</li>
-                        <li>{{contenidoAbout['textoEnriquecido3']}}</li>
+                        <li></li>
+                        <li></li>
+                        <li></li>
                     </ul>
                 </div>
             </div>
             <div class="col-sm-6 offset-sm-1">
                 <div class="row align-items-center">
                     <div class="col-6">
-                        <img src="{{contenidoAbout['imagen1']}}" class="img-fluid" alt="">
+                        <img src="" class="img-fluid" alt="">
                     </div>
                     <div class="col-6">
                         <div class="row">
                             <div class="col-12 mb03">
-                                <img src="{{contenidoAbout['imagen2']}}" class="img-fluid" alt="">
+                                <img src="" class="img-fluid" alt="">
                             </div>
                             <div class="col-12">
-                                <img src="{{contenidoAbout['imagen3']}}" class="img-fluid" alt="">
+                                <img src="" class="img-fluid" alt="">
                             </div>
                         </div>
                     </div>
@@ -562,19 +566,19 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[11] == '1' %}
+{% if datos.disenios.idAccion == 1 %}
 <section class="mw_cta-01 mb" id="mw_cta01">
-    <div class="parallax image-cta bg-overlay" {{contenidoAccion['imagenFondo']}}>
+    <div class="parallax image-cta bg-overlay" >
         <div class="container">
             <div class="row">
                 <div class="content-cta col-sm-8 offset-sm-2">
-                    <h4>{{contenidoAccion['cta']}}</h4>
-                    <h5>{{contenidoAccion['refuerzo']}}</h5>
+                    <h4>{{datos.contenido.contentAction.cta}}</h4>
+                    <h5>{{datos.contenido.contentAction.rescate}}</h5>
 
                     <div class="btn-cta">
-                        <a id="mw_cta_btn_mail_01" {{contenidoAccion['colorBoton']}} class="btn btn-style-01 col-sm-6 offset-sm-3 d-none d-md-block">{{contenidoAccion['textoBoton']}}</a>
-                        <a id="mw_cta_btn_phone_01" onclick="click()" href="tel:{{header[1]}}" class="col-10 offset-1 btn btn-style-01 d-block d-md-none">
-                                  <i class="fal fa-phone-alt"></i> Llamanos Ahora</a>
+                        <a id="mw_cta_btn_mail_01" class="btn btn-style-01 col-sm-6 offset-sm-3 d-none d-md-block">Contactanos</a>
+                        <a id="mw_cta_btn_phone_01" onclick="click()" href="tel:{{datos.contenido.contacto.telefono}}" class="col-10 offset-1 btn btn-style-01 d-block d-md-none">
+                                  <i class="fal fa-phone-alt"></i>{{datos.contenido.contentAction.txtBtn}}</a>
                     </div>
                 </div>
             </div>
@@ -582,19 +586,19 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[11] == '2' %}
+{% if datos.disenios.idAccion == 2 %}
 <section class="mw_cta-02 mb" id="mw_cta02">
-    <div class="parallax image-cta bg-overlay" {{contenidoAccion['imagenFondo']}}>
+    <div class="parallax image-cta bg-overlay">
         <div class="container">
             <div class="row align-items-center">
                 <div class="content-cta col-sm-6">
-                    <h4>{{contenidoAccion['cta']}}</h4>
-                    <h5>{{contenidoAccion['refuerzo']}}</h5>
+                    <h4>{{datos.contenido.contentAction.cta}}</h4>
+                    <h5>{{datos.contenido.contentAction.rescate}}</h5>
 
                     <div class="btn-cta">
-                        <a id="mw_cta_btn_mail_02" onclick="click()" {{contenidoAccion['colorBoton']}} class="btn btn-style-01 col-sm-6 d-none d-md-block">{{contenidoAccion['textoBoton']}}</a>
-                        <a id="mw_cta_btn_phone_02" onclick="click()" href="tel:{{header[1]}}" class="col-10 offset-1 btn btn-style-01 d-block d-md-none">
-                                  <i class="fal fa-phone-alt"></i> Llamanos Ahora</a>
+                        <a id="mw_cta_btn_mail_02" onclick="click()" class="btn btn-style-01 col-sm-6 d-none d-md-block">{{datos.contenido.contentAction.txtBtn}}</a>
+                        <a id="mw_cta_btn_phone_02" onclick="click()" href="tel:{{datos.contenido.contacto.telefono}}" class="col-10 offset-1 btn btn-style-01 d-block d-md-none">
+                                  <i class="fal fa-phone-alt"></i>{{datos.contenido.contentAction.txtBtn}}</a>
                     </div>
                 </div>
             </div>
@@ -602,20 +606,20 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[11] == '3' %}
+{% if datos.disenios.idAccion == 3 %}
 <section class="mw_cta-03 mb" id="mw_cta03">
-    <div class="parallax image-cta bg-overlay" {{contenidoAccion['imagenFondo']}}>
+    <div class="parallax image-cta bg-overlay" >
         <div class="container">
             <div class="row align-items-center">
                 <div class="content-cta-left col-sm-8">
-                    <h4>{{contenidoAccion['cta']}}</h4>
-                    <h5>{{contenidoAccion['refuerzo']}}</h5>
+                    <h4>{{datos.contenido.contentAction.cta}}</h4>
+                    <h5>{{datos.contenido.contentAction.rescate}}</h5>
                 </div>
                 <div class="content-cta-right col-sm-4">
                     <div class="btn-cta">
                         <a id="mw_cta_btn_mail_03" onclick="click()" class="btn btn-style-01 col-sm-9 offset-sm-3 d-none d-md-block">Contactanos</a>
-                        <a id="mw_cta_btn_phone_03" onclick="click()" href="tel:{{header[1]}}" class="col-10 offset-1 btn btn-style-01 d-block d-md-none">
-                                  <i class="fal fa-phone-alt"></i> Llamanos Ahora</a>
+                        <a id="mw_cta_btn_phone_03" onclick="click()" href="tel:{{telefono}}" class="col-10 offset-1 btn btn-style-01 d-block d-md-none">
+                                  <i class="fal fa-phone-alt"></i>{{datos.contenido.contentAction.txtBtn}}</a>
                     </div>
                 </div>
             </div>
@@ -623,106 +627,106 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[11] == '4' %}
-<section class="mw_cta-04" id="mw_cta04" {{contenidoAccion['colorFondo']}}>
+{% if datos.disenios.idAccion == 4 %}
+<section class="mw_cta-04" id="mw_cta04" >
     <div class="container">
         <div class="row align-items-center">
             <div class="content-cta col-sm-9">
-                <h4>{{contenidoAccion['refuerzo']}}</h4>
+                <h4>{{datos.contenido.contentAction.cta}}</h4>
             </div>
             <div class="btn-cta col-sm-3">
-                <a id="mw_cta_btn_mail_04" {{contenidoAccion['colorBoton']}} class="btn btn-style-03 d-none d-md-block">{{contenidoAccion['textoBoton']}}</a>
-                <a id="mw_cta_btn_phone_04" href="tel:{{header[1]}}" class="col-10 offset-1 btn btn-style-01 d-block d-md-none">
-                      <i class="fal fa-phone-alt"></i> Llamanos Ahora</a>
+                <a id="mw_cta_btn_mail_04" class="btn btn-style-03 d-none d-md-block"></a>
+                <a id="mw_cta_btn_phone_04" href="tel:{{datos.contenido.contacto.telefono}}" class="col-10 offset-1 btn btn-style-01 d-block d-md-none">
+                      <i class="fal fa-phone-alt"></i> {{datos.contenido.contentAction.txtBtn}}</a>
             </div>
         </div>
     </div>
 </section>
 {% endif %}
 
-{% if disenio[5] == '1' %}
+{% if datos.disenios.idTestimonio == 1 %}
 <section class="mw_testimonials-01 mb" id="mw_testimonials01">
     <div class="container">
         <div class="row">
             <div class="title-section col-sm-8 offset-sm-2">
-                <h2>{{contenidoTestimonio['titulo']}}</h2>
+                <h2>{{datos.contenido.contentTestimonios.titulo}}</h2>
             </div>
             <div class="intro-section col-sm-8 offset-sm-2">
-                <p>{{contenidoTestimonio['parrafo']}}</p>
+                <p>{{datos.contenido.contentTestimonios.introTestimonios}}</p>
             </div>
         </div>
         <div class="row">
             <div class="col-12">
                 <div class="owl-carousel owl-theme" id="owl-1">
                     <div class="item-post">
-                        <p class="text-center">{{contenidoTestimonio['testimonio1']}}</p>
+                        <p class="text-center">{{datos.contenido.contentTestimonios.testimonios01}}</p>
                         <div class="row">
                             <div class="img-featured col-3 offset-1">
-                                <img src="{{contenidoTestimonio['icono1']}}" class="img-fluid rounded-circle" alt="">
+                                <img src="" class="img-fluid rounded-circle" alt="">
                             </div>
                             <div class="intro-post col-8">
-                                  <h3 class="title-post">{{contenidoTestimonio['tituloTestimonio1']}}</h3>
-                                  <p>{{contenidoTestimonio['locacionTestimonio1']}}</p>
+                                  <h3 class="title-post">{{datos.contenido.contentTestimonios.nombreTesti01}}</h3>
+                                  <p>{{datos.contenido.contentTestimonios.locacionTesti01}}</p>
                             </div>
                           </div>
                     </div>
                     <div class="item-post">
-                          <p class="text-center">{{contenidoTestimonio['testimonio2']}}</p>
+                          <p class="text-center">{{datos.contenido.contentTestimonios.testimonio02}}</p>
                           <div class="row">
                             <div class="img-featured col-3 offset-1">
-                                  <img src="{{contenidoTestimonio['icono2']}}" class="img-fluid rounded-circle" alt="">
+                                  <img src="" class="img-fluid rounded-circle" alt="">
                             </div>
                             <div class="intro-post col-8">
-                                  <h3 class="title-post">{{contenidoTestimonio['tituloTestimonio2']}}</h3>
-                                  <p>{{contenidoTestimonio['locacionTestimonio2']}}</p>
+                                  <h3 class="title-post">{{datos.contenido.contentTestimonios.nombreTesti02}}</h3>
+                                  <p>{{datos.contenido.contentTestimonios.locacionTesti02}}</p>
                             </div>
                           </div>
                     </div>
                     <div class="item-post">
-                          <p class="text-center">{{contenidoTestimonio['testimonio3']}}</p>
+                          <p class="text-center">{{datos.contenido.contentTestimonios.testimonios03}}</p>
                           <div class="row">
                             <div class="img-featured col-3 offset-1">
-                                  <img src="{{contenidoTestimonio['icono3']}}" class="img-fluid rounded-circle" alt="">
+                                  <img src="" class="img-fluid rounded-circle" alt="">
                             </div>
                             <div class="intro-post col-8">
-                                  <h3 class="title-post">{{contenidoTestimoni['tituloTestimonio3']}}</h3>
-                                  <p>{{contenidoTestimonio['locacionTestimonio3']}}</p>
+                                  <h3 class="title-post">{{datos.contenido.contentTestimonios.nombreTesti03}}</h3>
+                                  <p>{{datos.contenido.contentTestimonios.locacionTesti03}}</p>
                             </div>
                           </div>
                     </div>
                     <div class="item-post">
-                          <p class="text-center">{{contenidoTestimonio['testimonio4']}}</p>
+                          <p class="text-center">{{datos.contenido.contentTestimonios.testimonios04}}</p>
                               <div class="row">
                                 <div class="img-featured col-3 offset-1">
-                                  <img src="{{contenidoTestimonio['icono4']}}" class="img-fluid rounded-circle" alt="">
+                                  <img src="" class="img-fluid rounded-circle" alt="">
                             </div>
                             <div class="intro-post col-8">
-                                  <h3 class="title-post">{{contenidoTestimonio['tituloTestimonio4']}}</h3>
-                                  <p>{{contenidoTestimonio['locacionTestimonio4']}}</p>
+                                  <h3 class="title-post">{{datos.contenido.contentTestimonios.nombreTesti04}}</h3>
+                                  <p>{{datos.contenido.contentTestimonios.locacionTesti04}}</p>
                             </div>
                           </div>
                     </div>
                     <div class="item-post">
-                          <p class="text-center">{{contenidoTestimonio['testimonio5']}}</p>
+                          <p class="text-center">{{datos.contenido.contentTestimonios.testimonio05}}</p>
                           <div class="row">
                             <div class="img-featured col-3 offset-1">
-                                  <img src="{{contenidoTestimonio['icono5']}}" class="img-fluid rounded-circle" alt="">
+                                  <img src="" class="img-fluid rounded-circle" alt="">
                             </div>
                             <div class="intro-post col-8">
-                                  <h3 class="title-post">{{contenidoTestimonio['tituloTestimonio5']}}</h3>
-                                  <p>{{contenidoTestimonio['locacionTestimonio5']}}</p>
+                                  <h3 class="title-post">{{datos.contenido.contentTestimonios.nombreTesti05}}</h3>
+                                  <p>{{datos.contenido.contentTestimonios.locacionTesti05}}</p>
                             </div>
                           </div>
                     </div>
                     <div class="item-post">
-                        <p class="text-center">{{contenidoTestimonio['testimonio6']}}</p>
+                        <p class="text-center">{{datos.contenido.contentTestimonios.testimonio06}}</p>
                         <div class="row">
                           <div class="img-featured col-3 offset-1">
-                                <img src="{{contenidoTestimonio['icono6']}}" class="img-fluid rounded-circle" alt="">
+                                <img src="" class="img-fluid rounded-circle" alt="">
                           </div>
                           <div class="intro-post col-8">
-                                <h3 class="title-post">{{contenidoTestimonio['tituloTestimonio6']}}</h3>
-                                <p>{{contenidoTestimonio['locacionTestimonio6']}}</p>
+                                <h3 class="title-post">{{datos.contenido.contentTestimonios.nombreTesti06}}</h3>
+                                <p>{{datos.contenido.contentTestimonios.locacionTesti06}}</p>
                           </div>
                         </div>
                   </div>
@@ -732,15 +736,15 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[5] == '2' %}
+{% if datos.disenios.idTestimonio == 2 %}
 <section class="mw_testimonials-02 mb" id="mw_testimonials02">
     <div class="container">
         <div class="row">
             <div class="title-section col-sm-8 offset-sm-2">
-                <h2>{{contenidoTestimonio['titulo']}}</h2>
+                <h2>{{datos.contenido.contentTestimonios.titulo}}</h2>
             </div>
             <div class="intro-section col-sm-8 offset-sm-2">
-                <p>{{contenidoTestimonio['parrafo']}}</p>
+                <p>{{datos.contenido.contentTestimonios.introTestimonios}} </p>
             </div>
         </div>
         <div class="row">
@@ -748,68 +752,68 @@
                 <div class="mw_owl-02 owl-carousel owl-theme" id="owl-2">
                     <div class="item-post">
                           <div class="img-featured">
-                            <img src="{{contenidoTestimonio['icono1']}}" class="img-fluid" alt="">
+                            <img src="" class="img-fluid" alt="">
                           </div>
                           <div class="title-post">
-                            <h3>{{contenidoTestimonio['tituloTestimonio1']}}</h3>
+                            <h3>{{datos.contenido.contentTestimonios.nombreTesti01 }} </h3>
                           </div>
                           <div class="intro-post">
-                            <p>{{contenidoTestimonio['testimonio1']}}</p>
+                            <p>{{datos.contenido.contentTestimonios.testimonio01}} </p>
                           </div>
                     </div>
                     <div class="item-post">
                           <div class="img-featured">
-                            <img src="{{contenidoTestimonio['icono2']}}" class="img-fluid" alt="">
+                            <img src="" class="img-fluid" alt="">
                           </div>
                           <div class="title-post">
-                            <h3>{{contenidoTestimonio['tituloTestimonio2']}}</h3>
+                            <h3>{{datos.contenido.contentTestimonios.nombreTesti02}}</h3>
                           </div>
                           <div class="intro-post">
-                            <p>{{contenidoTestimonio['testimonio2']}}</p>
+                            <p>{{datos.contenido.contentTestimonios.testimonio02}}</p>
                           </div>              
                     </div>
                     <div class="item-post">
                           <div class="img-featured">
-                            <img src="{{contenido['icono3']}}" class="img-fluid" alt="">
+                            <img src="" class="img-fluid" alt="">
                           </div>
                           <div class="title-post">
-                            <h3>{{contenidoTestimonio['tituloTestimonio3]'}}</h3>
+                            <h3>{{datos.contenido.contentTestimonios.nombreTesti03}}</h3>
                           </div>
                           <div class="intro-post">
-                            <p>{{contenidoTestimonio['testimonio3']}}</p>
+                            <p>{{datos.contenido.contentTestimonios.testimonio03}}</p>
                           </div>              
                     </div>
                     <div class="item-post">
                           <div class="img-featured">
-                            <img src="{{contenido['icono4']}}" class="img-fluid" alt="">
+                            <img src="" class="img-fluid" alt="">
                           </div>
                           <div class="title-post">
-                            <h3>{{contenidoTestimonio['tituloTestimonio4']}}</h3>
+                            <h3>{{datos.contenido.contentTestimonios.nombreTesti04}}</h3>
                           </div>
                           <div class="intro-post">
-                            <p>{{contenidoTestimonio['testimonio4']}}</p>
+                            <p>{{datos.contenido.contentTestimonios.testimonio04}}</p>
                           </div>              
                     </div>
                     <div class="item-post">
                           <div class="img-featured">
-                            <img src="{{contenidoTestimonio['icono5']}}" class="img-fluid" alt="">
+                            <img src="" class="img-fluid" alt="">
                           </div>
                           <div class="title-post">
-                            <h3>{{contenidoTestimonio['tituloTestimonio5']}}</h3>
+                            <h3>{{datos.contenido.contentTestimonios.nombreTesti05}}</h3>
                           </div>
                           <div class="intro-post">
-                            <p>{{contenidoTestimonio['testimonio5']}}</p>
+                            <p>{{datos.contenido.contentTestimonios.testimonio05}}</p>
                           </div>
                     </div>
                     <div class="item-post">
                         <div class="img-featured">
-                          <img src="{{contenidoTestimonio['icono6']}}" class="img-fluid" alt="">
+                          <img src="" class="img-fluid" alt="">
                         </div>
                         <div class="title-post">
-                          <h3>{{contenidoTestimonio['tituloTestimonio6']}}</h3>
+                          <h3>{{datos.contenido.contentTestimonios.nombreTesti06}}</h3>
                         </div>
                         <div class="intro-post">
-                          <p>{{contenidoTestimonio['testimonio6']}}</p>
+                          <p>{{datos.contenido.contentTestimonios.testimonio06}}</p>
                         </div>
                   </div>
                   </div>
@@ -818,89 +822,89 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[5] == '3' %}
+{% if datos.disenios.idTestimonio == 3 %}
 <section class="mw_testimonials-03 mb" id="mw_testimonials03">
     <div class="container-fluid">
         <div class="row">
             <div class="title-section col-sm-8 offset-sm-2">
-                <h2>{{contenidoTestimonio['titulo']}}</h2>
+                <h2>{{datos.contenido.contentTestimonios.titulo}}</h2>
             </div>
             <div class="intro-section col-sm-8 offset-sm-2">
-                <p>{{contenidoTestimonio['parrafo']}}</p>
+                <p>{{datos.contenido.contentTestimonios.introTestimonios}}</p>
             </div>
         </div>
         <div class="row align-items-center">
             <div class="col-sm-6 offset-sm-1 mb03">
                   <div class="owl-carousel owl-theme" id="owl-3">
                     <div class="item-post">
-                          <p>{{contenidoTestimonio['testimonio1']}}</p>
+                          <p>{{datos.contenido.contentTestimonios.testimonio01}}</p>
                           <div class="row">
                             <div class="img-featured col-3">
-                                  <img src="{{contenidoTestimonio['icono1']}}" class="img-fluid rounded-circle" alt="">
+                                  <img src="" class="img-fluid rounded-circle" alt="">
                             </div>
                             <div class="intro-post col-9">
-                                  <h3 class="title-post">{{contenidoTestimonio['tituloTestimonio1']}}</h3>
-                                  <p>{{contenidoTestimonio['locacionTestimonio1']}}</p>
+                                  <h3 class="title-post">{{datos.contenido.contentTestimonios.nombreTesti01}}</h3>
+                                  <p>{{datos.contenido.contentTestimonios.locacionTesti01}}</p>
                             </div>
                           </div>
                     </div>
                     <div class="item-post">
-                          <p>{{contenidoTestimonio['testimonio2]}}</p>
+                          <p>{{datos.contenido.contentTestimonios.testimonio02}}</p>
                           <div class="row">
                             <div class="img-featured col-3">
-                                  <img src="{{contenidoTestimonio['icono2']}}" class="img-fluid rounded-circle" alt="">
+                                  <img src="" class="img-fluid rounded-circle" alt="">
                             </div>
                             <div class="intro-post col-9">
-                                  <h3 class="title-post">{{contenidoTestimonio['tituloTestimonio2']}}</h3>
-                                  <p>{{contenidoTestimonio['locacionTestimonio2']}</p>
+                                  <h3 class="title-post">{{datos.contenido.contentTestimonios.nombreTesti02}}</h3>
+                                  <p>{{datos.contenido.contentTestimonios.locacionTesti02}}</p>
                             </div>
                           </div>
                     </div>
                     <div class="item-post">
-                          <p>{{contenidoTestimonio['testimonio3']}}</p>
+                          <p>{{datos.contenido.contentTestimonios.testimonio03}}</p>
                           <div class="row">
                             <div class="img-featured col-3">
-                                 <img src="{{contenidoTestimonio['icono3']}}" class="img-fluid rounded-circle" alt="">
+                                 <img src="" class="img-fluid rounded-circle" alt="">
                             </div>
                             <div class="intro-post col-9">
-                                  <h3 class="title-post">{{contenidoTestimonio['tituloTestimonio3']}}</h3>
-                                  <p>{{contenidoTestimonio['locacionTestimonio3']}}</p>
+                                  <h3 class="title-post">{{datos.contenido.contentTestimonios.nombreTesti03}}</h3>
+                                  <p>{{datos.contenido.contentTestimonios.locacionTesti03}}</p>
                             </div>
                           </div>
                     </div>
                     <div class="item-post">
-                          <p>{{contenidoTestimonio['testimonio4']}}</p>
+                          <p>{{datos.contenido.contentTestimonios.testimonio04}}</p>
                           <div class="row">
                             <div class="img-featured col-3">
-                                  <img src="{{contenido['icono4']}}" class="img-fluid rounded-circle" alt="">
+                                  <img src="" class="img-fluid rounded-circle" alt="">
                             </div>
                             <div class="intro-post col-9">
-                                  <h3 class="title-post">{{contenidoTestimonio['tituloTestimonio4']}}</h3>
-                                  <p>{{contenidoTestimonio['locacionTestimonio4']}}</p>
+                                  <h3 class="title-post">{{datos.contenido.contentTestimonios.nombreTesti04}}</h3>
+                                  <p>{{datos.contenido.contentTestimonios.locacionTesti04}}</p>
                             </div>
                           </div>
                     </div>
                     <div class="item-post">
-                          <p>{{contenidoTestimonio['testimonio5']}}</p>
+                          <p>{{datos.contenido.contentTestimonios.testimonios05}}</p>
                           <div class="row">
                             <div class="img-featured col-3">
-                                  <img src="{{contenidoTestimonio['icono5']}}" class="img-fluid rounded-circle" alt="">
+                                  <img src="" class="img-fluid rounded-circle" alt="">
                             </div>
                             <div class="intro-post col-9">
-                                  <h3 class="title-post">{{contenidoTestimonio['tituloTestimonio5']}}</h3>
-                                  <p>{{contenidoTestimonio['locacionTestimonio5']}}</p>
+                                  <h3 class="title-post">{{datos.contenido.contentTestimonios.nombreTesti05}}</h3>
+                                  <p>{{datos.contenido.contentTestimonios.locacionTesti05}}</p>
                             </div>
                           </div>
                     </div>
                     <div class="item-post">
-                        <p>{{contenidoTestimonio['testimonio6']}}</p>
+                        <p>{{datos.contenido.contentTestimonios.testimonio06}}</p>
                         <div class="row">
                           <div class="img-featured col-3">
-                                <img src="{{contenidoTestimonio['icono6']}}" class="img-fluid rounded-circle" alt="">
+                                <img src="" class="img-fluid rounded-circle" alt="">
                           </div>
                           <div class="intro-post col-9">
-                                <h3 class="title-post">{{contenidoTestimonio['tituloTestimonio6']}}</h3>
-                                <p>{{contenidoTestimonio['locacionTestimonio6']}}</p>
+                                <h3 class="title-post">{{datos.contenido.contentTestimonios.nombreTesti06 }} </h3>
+                                <p>{{datos.contenido.contentTestimonios.locacionTesti06}}</p>
                           </div>
                         </div>
                   </div>
@@ -913,15 +917,15 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[5] == '4' %}
+{% if datos.disenios.idTestimonio == 4 %}
 <section class="mw_testimonials-04 mb" id="mw_testimonials04">
     <div class="container">
         <div class="row">
             <div class="title-section col-sm-8 offset-sm-2">
-                <h1>{{contenidoTestimonio['titulo']}}</h1>
+                <h1>{{datos.contenido.contentTestimonios.titulo}}</h1>
             </div>
             <div class="intro-section col-sm-8 offset-sm-2">
-                <p>{{contenidoTestimonio['parrafo']}}</p>
+                <p>{{datos.contenido.contentTestimonios.introTestimonios}}</p>
             </div>
         </div>
         <div class="row">
@@ -929,68 +933,68 @@
                 <div class="owl-carousel owl-theme" id="owl-4">
                     <div class="item-post">
                           <div class="img-featured">
-                               <img src="{{contenidoTestimonio['icono1']}}" class="img-fluid" alt="">
+                               <img src="" class="img-fluid" alt="">
                           </div>
                           <div class="title-post">
-                            <h3>{{contenidoTestimonio['tituloTestimonio1']}}</h3>
+                            <h3>{{datos.contenido.contentTestimonios.nombreTesti01}}</h3>
                           </div>
                           <div class="intro-post">                
-                            <p>{{contenidoTestimonio['testimonio1']}}</p>
+                            <p>{{datos.contenido.contentTestimonios.testimonio01}}</p>
                           </div>
                     </div>
                     <div class="item-post">
                         <div class="img-featured">
-                            <img src="{{contenidoTestimonio['icono2']}}" class="img-fluid" alt="">
+                            <img src="" class="img-fluid" alt="">
                         </div>
                         <div class="title-post">
-                            <h3>{{contenidoTestimonio['tituloTestimonio2']}}</h3>
+                            <h3>{{datos.contenido.contentTestimonio.nombreTesti02}}</h3>
                         </div>
                         <div class="intro-post">                
-                            <p>{{contenidoTestimonio['testimonio2']}}</p>
+                            <p>{{datos.contenido.contentTestimonio.testimonio02}}</p>
                         </div>
                     </div>
                     <div class="item-post">
                         <div class="img-featured">
-                            <img src="{{contenidoTestimonio['icono3']}}" class="img-fluid" alt="">
+                            <img src="" class="img-fluid" alt="">
                         </div>  
                         <div class="title-post">
-                            <h3>{{contenidoTestimonio['tituloTestimonio3']}}</h3>
+                            <h3>{{datos.contenido.contentTestimonio.nombreTesti03}}</h3>
                         </div>
                         <div class="intro-post">                
-                            <p>{{contenidoTestimonio['testimonio3']}}</p>
+                            <p>{{datos.contenido.contentTestimonio.testimonio03}}</p>
                         </div>
                     </div>
                     <div class="item-post">
                         <div class="img-featured">
-                            <img src="{{contenidoTestimonio['icono4']}}" class="img-fluid" alt="">
+                            <img src="" class="img-fluid" alt="">
                         </div>
                         <div class="title-post">
-                            <h3>{{contenidoTestimonio['tituloTestimonio4']}}</h3>
+                            <h3>{{datos.contenido.contentTestimonio.nombreTesti04}}</h3>
                         </div>
                         <div class="intro-post">                
-                            <p>{{contenidoTestimonio['testimonio4']}}</p>
+                            <p>{{datos.contenido.contentTestimonio.testimonio04}}</p>
                         </div>
                     </div>
                     <div class="item-post">
                         <div class="img-featured">
-                            <img src="{{contenidoTestimonio['icono5']}}" class="img-fluid" alt="">
+                            <img src="" class="img-fluid" alt="">
                         </div>
                         <div class="title-post">
-                            <h3>{{contenidoTestimonio['tituloTestimonio5']}}</h3>
+                            <h3>{{datos.contenido.contentTestimonio.nombreTesti05}}</h3>
                         </div>
                         <div class="intro-post">                
-                            <p>{{contenidoTestimonio['testimonio5']}}</p>
+                            <p>{{datos.contenido.contentTestimonio.testimonio05}}</p>
                         </div>
                     </div>
                     <div class="item-post">
                         <div class="img-featured">
-                            <img src="{{contenidoTestimonio['icono6']}}" class="img-fluid" alt="">
+                            <img src="" class="img-fluid" alt="">
                         </div>
                         <div class="title-post">
-                            <h3>{{contenidoTestimonio['tituloTestimonio6']}}</h3>
+                            <h3>{{datos.contenido.contentTestimonio.nombreTesti06}}</h3>
                         </div>
                         <div class="intro-post">                
-                            <p>{{contenidoTestimonio['testimonio6']}}</p>
+                            <p>{{datos.contenido.contentTestimonio.testimonio06}}</p>
                         </div>
                     </div>
                   </div>
@@ -1001,41 +1005,41 @@
 
 {% endif %}
 
-{% endif %}
-{% if disenio[6] == '1' %}
+
+{% if datos.disenios.idBeneficios == 1 %}
 <section class="mw_benefits-01 mb mt03" id="mw_benefits01">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-sm-5">
                 <div class="title-section">
-                    <h2>{{contenidoBeneficios['titulo']}}</h2>
+                    <h2>{{datos.contenido.contentBeneficios.titulo}}</h2>
                 </div>
                 <div class="intro-section">
-                    <p>{{contenidoBeneficios['parrafo']}}</p>
+                    <p>{{datos.contenido.contentBeneficios.introBeneficios}}</p>
                 </div>
                 <div class="content-section">
                     <ul>
-                        <li>{{contenidoBeneficios['beneficio1']}}</li>
-                        <li>{{contenidoBeneficios['beneficio2']}}</li>
-                        <li>{{contenidoBeneficios['beneficio3']}}</li>
-                        <li>{{contenidoBeneficios['beneficio4']}}</li>
-                        <li>{{contenidoBeneficios['beneficio5']}}</li>
-                        <li>{{contenidoBeneficios['beneficio6']}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio01}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio02}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio03}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio04}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio05}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio06}}</li>
                     </ul>
                 </div>
             </div>
             <div class="col-sm-6 offset-sm-1">
                 <div class="row align-items-center">
                     <div class="col-6">
-                        <img src="{{contenidoBeneficios['imagen1']}}" class="img-fluid" alt="">
+                        <img src="" class="img-fluid" alt="">
                     </div>
                     <div class="col-6">
                         <div class="row">
                             <div class="col-12 mb03">
-                                <img src="{{contenidoBeneficios['imagen2']}}" class="img-fluid" alt="">
+                                <img src="" class="img-fluid" alt="">
                             </div>
                             <div class="col-12">
-                                <img src="{{contenidoBeneficios['imagen3']}}" class="img-fluid" alt="">
+                                <img src="" class="img-fluid" alt="">
                             </div>
                         </div>
                     </div>
@@ -1045,33 +1049,33 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[6] == '2' %}
+{% if datos.disenios.idBeneficios == 2 %}
 <section class="mw_benefits-02 mb" id="mw_benefits02">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-sm-5">
                 <div class="video-featured">
-                    <img src="{{contenidoBeneficios['imagen']}}" class="img-fluid" alt="">
-                    <a id="mw_benefits_play-02" class="play-video" data-fancybox href="https://www.youtube.com/watch?v=Na_Be4Yj-G8">
+                    <img src="" class="img-fluid" alt="">
+                    <a id="mw_benefits_play-02" class="play-video" data-fancybox href="{{datos.contenido.contentBeneficios.imagenBeneficio}}">
                         <i class="fal fa-play-circle"></i>
                     </a>
                 </div>
             </div>
             <div class="col-sm-5 offset-sm-1">
                 <div class="title-section">
-                    <h2>{{contenidoBeneficios['titulo']}}</h2>
+                    <h2>{{datos.contenido.contentBeneficios.titulo}}</h2>
                 </div>
                 <div class="intro-section">
-                    <p>{{contenidoBeneficios['parrafo']}}</p>
+                    <p>{{datos.contenido.contentBeneficios.introBeneficios}}</p>
                 </div>
                 <div class="content-section">
                     <ul>
-                        <li>{{contenidoBeneficios['beneficio1']}}</li>
-                        <li>{{contenidoBeneficios['beneficio2']}}</li>
-                        <li>{{contenidoBeneficios['beneficio3']}}</li>
-                        <li>{{contenidoBeneficios['beneficio4']}}</li>
-                        <li>{{contenidoBeneficios['beneficio5']}}</li>
-                        <li>{{contenidoBeneficios['beneficio6']}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio01}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio02}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio03}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio04}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio05}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio06}}</li>
                     </ul>
                 </div>
             </div>
@@ -1079,25 +1083,25 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[6] == '3' %}
+{% if datos.disenios.idBeneficios == 3 %}
 <section class="mw_benefits-03 mb" id="mw_benefits03">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-sm-5 offset-sm-1">
                 <div class="title-section">
-                    <h2>{{contenidoBeneficios['titulo']}}</h2>
+                    <h2>{{datos.contenido.contentBeneficios.titulo}}</h2>
                 </div>
                 <div class="intro-section">
-                    <p>{{contenidoBeneficios['parrafo']}}</p>
+                    <p>{{datos.contenido.contentBeneficios.introBeneficios}}</p>
                 </div>
                 <div class="content-section">
                     <ul>
-                        <li>{{contenidoBeneficios['beneficio1']}}</li>
-                        <li>{{contenidoBeneficios['beneficio2']}}</li>
-                        <li>{{contenidoBeneficios['beneficio3']}}</li>
-                        <li>{{contenidoBeneficios['beneficio4']}}</li>
-                        <li>{{contenidoBeneficios['beneficio5']}}</li>
-                        <li>{{contenidoBeneficios['beneficio6']}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio01}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio02}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio03}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio04}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio05}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio06}}</li>
                     </ul>
                 </div>
             </div>
@@ -1108,28 +1112,28 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[6] == '4' %}
+{% if datos.disenios.idBeneficios == 4 %}
 <section class="mw_benefits-04 mb" id="mw_benefits04">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-sm-6">
-                <img src="{{contenidoBeneficios['imagen']}}" class="img-fluid" alt="">
+                <img src="" class="img-fluid" alt="">
             </div>
             <div class="col-sm-5 offset-sm-1">
                 <div class="title-section">
-                    <h2>{{contenidoBeneficios['titulo']}}</h2>
+                    <h2>{{datos.contenido.contentBeneficios.titulo}}</h2>
                 </div>
                 <div class="intro-section">
-                    <p>{{contenidoBeneficios['parrafo']}}</p>
+                    <p>{{datos.contenido.contentBeneficios.introBeneficios}}</p>
                 </div>
                 <div class="content-section">
                     <ul>
-                        <li>{{contenidoBeneficios['beneficio1']}}</li>
-                        <li>{{contenidoBeneficios['beneficio2']}}</li>
-                        <li>{{contenidoBeneficios['beneficio3']}}</li>
-                        <li>{{contenidoBeneficios['beneficio4']}}</li>
-                        <li>{{contenidoBeneficios['beneficio5']}}</li>
-                        <li>{{contenidoBeneficios['beneficio6']}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio01}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio02}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio03}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio04}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio05}}</li>
+                        <li>{{datos.contenido.contentBeneficios.beneficio06}}</li>
                     </ul>
                 </div>
             </div>
@@ -1137,15 +1141,15 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[6] == '5' %}
+{% if datos.disenios.idBeneficios == 5 %}
 <section class="mw_benefits-05 mb" id="mw_benefits05">
     <div class="container">
         <div class="row">
             <div class="col-sm-8 offset-sm-2 title-section text-center">
-                <h2>{{contenidoBeneficios['titulo']}}</h2>
+                <h2>{{datos.contenido.contentBeneficios.titulo}}</h2>
             </div>
             <div class="intro-section col-sm-8 offset-sm-2">
-                <p>{{contenidoBeneficios['parrafo']}}</p>
+                <p>{{datos.contenido.contentBeneficios.introBeneficios}}</p>
             </div>
         </div>
         <div class="row">
@@ -1153,12 +1157,12 @@
                 <div class="col-12 item-benefit">
                     <div class="row">
                         <div class="col-3 col-md-2">
-                            <img src="{{contenidoBeneficios['imagenBeneficio1']}}" class="img-fluid rounded-circle" alt="">
+                            <img src="" class="img-fluid rounded-circle" alt="">
                         </div>
                         <div class="col-9 col-md-10">
-                            <h6>{{contenidoBeneficios['tituloBeneficio1']}}</h6>
+                            <h6>{{datos.contenido.contentBeneficios.nombreBenef01}}</h6>
                             <p>
-                                {{contenidoBeneficios['beneficio1']}}
+                                {{datos.contenido.contentBeneficios.beneficio01}}
                             </p>
                         </div>
                     </div>
@@ -1166,22 +1170,22 @@
                 <div class="col-12 item-benefit">
                     <div class="row">
                         <div class="col-3 col-md-2">
-                            <img src="{{contenidoBeneficios['imagenBeneficio2']}}" class="img-fluid rounded-circle" alt="">
+                            <img src="" class="img-fluid rounded-circle" alt="">
                         </div>
                         <div class="col-9 col-md-10">
-                            <h6>{{contenidoBeneficios['tituloBeneficio2']}}</h6>
-                            <p>{{contenidoBeneficios['beneficio2']}}</p>
+                            <h6> {{datos.contenido.contentBeneficios.nombreBenef02}} </h6>
+                            <p> {{datos.contenido.contentBeneficios.beneficio02}} </p>
                         </div>
                     </div>
                 </div>
                 <div class="col-12 item-benefit">
                     <div class="row">
                         <div class="col-3 col-md-2">
-                            <img src="{{contenidoBeneficios['imagenBeneficio3']}}" class="img-fluid rounded-circle" alt="">
+                            <img src="" class="img-fluid rounded-circle" alt="">
                         </div>
                         <div class="col-9 col-md-10">
-                            <h6>{{contenidoBeneficios['tituloBeneficio3']}}</h6>
-                            <p>{{contenidoBeneficios['beneficio3']}}</p>
+                            <h6> {{datos.contenido.contentBeneficios.nombreBenef03}} </h6>
+                            <p> {{datos.contenido.contentBeneficios.beneficio03}} </p>
                         </div>
                     </div>
                 </div>
@@ -1190,33 +1194,33 @@
                 <div class="col-12 item-benefit">
                     <div class="row">
                         <div class="col-3 col-md-2">
-                            <img src="{{contenidoBeneficios['imagenBeneficio4']}}" class="img-fluid rounded-circle" alt="">
+                            <img src="" class="img-fluid rounded-circle" alt="">
                         </div>
                         <div class="col-9 col-md-10">
-                            <h6>{{contenidoBeneficios['tituloBeneficio4']}}</h6>
-                            <p>{{contenidoBeneficios['tituloBeneficio4']}}</p>
+                            <h6> {{datos.contenido.contentBeneficios.nombreBenef04}} </h6>
+                            <p> {{datos.contenido.contentBeneficios.beneficio04}} </p>
                         </div>
                     </div>
                 </div>
                 <div class="col-12 item-benefit">
                     <div class="row">
                         <div class="col-3 col-md-2">
-                            <img src="{{contenidoBeneficios['imagenBeneficio5']}}" class="img-fluid rounded-circle" alt="">
+                            <img src="" class="img-fluid rounded-circle" alt="">
                         </div>
                         <div class="col-9 col-md-10">
-                            <h6>{{contenidoBeneficios['tituloBeneficio5']}}</h6>
-                            <p>{{contenidoBeneficios['beneficio5']}}</p>
+                            <h6> {{datos.contenido.contentBeneficios.nombreBenef05}} </h6>
+                            <p> {{datos.contenido.contentBeneficios.beneficio05}} </p>
                         </div>
                     </div>
                 </div>
                 <div class="col-12 item-benefit">
                     <div class="row">
                         <div class="col-3 col-md-2">
-                            <img src="{{contenidoBeneficios['imagenBeneficio6']}}" class="img-fluid rounded-circle" alt="">
+                            <img src="" class="img-fluid rounded-circle" alt="">
                         </div>
                         <div class="col-9 col-md-10">
-                            <h6>{{contenidoBeneficios['tituloBeneficio6']}}</h6>
-                            <p>{{contenidoBeneficios['beneficio6']}}</p>
+                            <h6> {{datos.contenido.contentBeneficios.nombreBenef06}} </h6>
+                            <p> {{datos.contenido.contentBeneficios.beneficio06}} </p>
                         </div>
                     </div>
                 </div>
@@ -1225,15 +1229,15 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[6] == '6' %}
+{% if datos.disenios.idBeneficios == 6 %}
 <section class="mw_benefits-06 mb" id="mw_benefits06">
     <div class="container">
         <div class="row">
             <div class="col-sm-8 offset-sm-2 title-section text-center">
-                <h2>{{contenidoBeneficios['titulo']}}</h2>
+                <h2></h2>
             </div>
             <div class="intro-section col-sm-8 offset-sm-2">
-                <p>{{contenidoBeneficios['parrafo']}}</p>
+                <p></p>
             </div>
         </div>
         <div class="row">
@@ -1244,8 +1248,8 @@
                             <i class="fal fa-newspaper"></i>
                         </div>
                         <div class="col-9 col-md-10">
-                            <h6>{{contenidoBeneficios['tituloBeneficio1']}}</h6>
-                            <p>{{contenidoBeneficios['beneficio1']}}</p>
+                            <h6></h6>
+                            <p></p>
                         </div>
                     </div>
                 </div>
@@ -1255,8 +1259,8 @@
                             <i class="fal fa-map-marker-alt"></i>
                         </div>
                         <div class="col-9 col-md-10">
-                            <h6>{{contenidoBeneficios['tituloBeneficio2']}}</h6>
-                            <p>{{contenidoBeneficios['beneficio2']}}</p>
+                            <h6></h6>
+                            <p></p>
                         </div>
                     </div>
                 </div>
@@ -1266,8 +1270,8 @@
                             <i class="fal fa-calendar-alt"></i>
                         </div>
                         <div class="col-9 col-md-10">
-                            <h6>{{contenidoBeneficios['tituloBeneficio3}</h6>
-                            <p>{{contenidoBeneficios['beneficio3']}}</p>
+                            <h6></h6>
+                            <p></p>
                         </div>
                     </div>
                 </div>
@@ -1279,8 +1283,8 @@
                             <i class="fal fa-newspaper"></i>
                         </div>
                         <div class="col-9 col-md-10">
-                            <h6>{{contenidoBeneficios['tituloBeneficio4']}}</h6>
-                            <p>{{contenidoBeneficios['beneficio4']}}</p>
+                            <h6></h6>
+                            <p></p>
                         </div>
                     </div>
                 </div>
@@ -1290,8 +1294,8 @@
                             <i class="fal fa-map-marker-alt"></i>
                         </div>
                         <div class="col-9 col-md-10">
-                            <h6>{{contenidoBeneficios['tituloBeneficio5']}}</h6>
-                            <p>{{contenidoBeneficios['beneficio5']}}</p>
+                            <h6></h6>
+                            <p></p>
                         </div>
                     </div>
                 </div>
@@ -1301,8 +1305,8 @@
                             <i class="fal fa-calendar-alt"></i>
                         </div>
                         <div class="col-9 col-md-10">
-                            <h6>{{contenidoBeneficios['tituloBeneficio6']}}</h6>
-                            <p>{{contenidoBeneficios['beneficio6']}}</p>
+                            <h6></h6>
+                            <p></p>
                         </div>
                     </div>
                 </div>
@@ -1313,7 +1317,7 @@
 
 
 {% endif %}
-{% if disenio[7] == '1' %}
+{% if datos.disenios.idFormularios == 1 %}
 <!-- Form 01 (Formulario Básico)-->
 <section class="mw_contact-01" id="mw_contact01">
     <div class="container">
@@ -1324,9 +1328,9 @@
                         <img src="https://via.placeholder.com/240x90" class="img-fluid" alt="">
                     </div>
                     <div class="col-md-8 offset-md-1">
-                        <h4>{{contenidoFormulario['cta']}}</h4>
-                        <h5>{{contenidoFormulario['refuerzo']}}</h5>
-                        <form action="/registrarInfoLP/{{disenio[0]}}">
+                        <h4>{{datos.contenido.contentForm.cta}}</h4>
+                        <h5>{{datos.contenido.contentForm.rescate}}</h5>
+                        <form action="/registrarInfoLP/{{datos.disenios.idDisenio}}">
                             {{ opcionFormulario.csrf_token }}
                             <div class="form-group">
                                 {{render_field(opcionFormulario.nombre, placeholder="Nombre completo", class="form-control")}}
@@ -1348,7 +1352,7 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[7] == '2' %}
+{% if datos.disenios.idFormularios == 3 %}
 <!-- Form 02 (Formulario agendar cita)-->
 <section class="mw_contact-02" id="mw_contact02">
     <div class="container">
@@ -1359,10 +1363,10 @@
                         <img src="https://via.placeholder.com/240x90" class="img-fluid" alt="">
                     </div>
                     <div class="col-md-8 offset-md-1">
-                        <h4>{{contenidoFormulario['cta']}}</h4>
-                        <h5>{{contenidoFormulario['refuerzo']}}</h5>
+                        <h4>{{datos.contenido.contentForm.cta}}</h4>
+                        <h5>{{datos.contenido.contentForm.rescate}}</h5>
 
-                        <form action="/registrarInfoLP/{{disenio[0]}}">
+                        <form action="/registrarInfoLP/{{datos.disenios.idDisenio}}">
                             {{ opcionFormulario.csrf_token }}
                             <div class="form-group">
                                 {{render_field(opcionFormulario.nombre, placeholder="Nombre completo", class="form-control")}}
@@ -1393,7 +1397,7 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[7] == '3' %}
+{% if datos.disenios.idFormularios == 2 %}
 <!-- form 03 (Formulario descarga)-->
 <section class="mw_contact-03" id="mw_contact03">
     <div class="container">
@@ -1404,10 +1408,10 @@
                         <img src="https://via.placeholder.com/240x90" class="img-fluid" alt="">
                     </div>
                     <div class="col-md-8 offset-md-1">
-                        <h4>{{contenidoFormulario['cta']}}</h4>
-                        <h5>{{contenidoFormulario['refuerzo']}}</h5>
+                        <h4>{{datos.contenido.contentForm.cta}}</h4>
+                        <h5>{{datos.contenido.contentForm.rescate}}</h5>
                         
-                        <form action="/registrarInfoLP/{{disenio[0]}}">{{ opcionFormulario.csrf_token }}
+                        <form action="/registrarInfoLP/{{datos.disenios.idDisenio}}">{{ opcionFormulario.csrf_token }}
                             <div class="form-group">
                                 {{render_field(opcionFormulario.nombre, placeholder="Nombre completo", class="form-control")}}
                             </div>
@@ -1415,7 +1419,7 @@
                                 {{render_field(opcionFormulario.correo, placeholder="Correo electrónico", class="form-control")}}
                             </div>
                             <div class="form-group">
-                                {{render_field(opcionFormulario.descargar, style="background-color:{{contenidoFormulario['fondoBoton']}}" class="btn btn-style-01 col-sm-6")}}
+                                {{render_field(opcionFormulario.descargar, style="background-color:{{contenidoFormulario['fondoBoton']}}", class="btn btn-style-01 col-sm-6")}}
                             </div>
                         </form>
                     </div>
@@ -1425,7 +1429,7 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[7] == '4' %}
+{% if datos.disenios.idFormularios == 4 %}
 <!-- form 04 (Formulario de reservación) -->
 <section class="mw_contact-04" id="mw_contact04">
     <div class="container">
@@ -1436,10 +1440,10 @@
                         <img src="https://via.placeholder.com/240x90" class="img-fluid" alt="">
                     </div>
                     <div class="col-md-8 offset-md-1">
-                        <h4>{{contenidoFormulario['cta']}}</h4>
-                        <h5>{{contenidoFormulario['refuerzo']}}</h5>
+                        <h4>{{datos.contenido.contentForm.cta}}</h4>
+                        <h5>{{datos.contenido.contentForm.rescate}}</h5>
 
-                        <form action="/registrarInfoLP/{{disenio[0]}}">{{ opcionFormulario.csrf_token }}
+                        <form action="/registrarInfoLP/{{datos.disenios.idDisenio}}">{{ opcionFormulario.csrf_token }}
                             <div class="row">
                                 <div class="form-group">
                                     {{render_field(opcionFormulario.nombre, placeholder="Nombre completo", class="form-control")}}
@@ -1477,50 +1481,50 @@
     </div>
 </section>
 {% endif %}
-{% if disenio[8] == '1' %}
-<footer class="mw_footer-01 mb" id="mw_footer01">
+{% if datos.disenios.idFooter == 1 %}
+<footer class="mw_footer-01 mb-0" id="mw_footer01">
     <div class="container">
         <div class="row">
             <div class="col-12 text-center">
                 <ul>
-                    <li>{{contenidoFooter['dominio']}}</li>
+                    <li>{{datos.contenido.contentFooter.fraseFooter}}</li>
                 </ul>
             </div>
         </div>
     </div>
 </footer>
 {% endif %}
-{% if disenio[8] == '2' %}
-<footer class="mw_footer-02 mb" id="mw_footer02">
+{% if datos.disenios.idFooter == 2 %}
+<footer class="mw_footer-02 mb mb-0" id="mw_footer02">
     <div class="container">
         <div class="row">
             <div class="col-sm-6">
                 <ul>
-                    <li>{{contenidoFooter['dominio']}}</li>
+                    <li>{{datos.contenido.contentFooter.fraseFooter}}</li>
                 </ul>
             </div>
         </div>
     </div>
 </footer>
 {% endif %}
-{% if disenio[8] == '3' %}
-<footer class="mw_footer-03" id="mw_footer03">
+{% if datos.disenios.idFooter == 3 %}
+<footer class="mw_footer-03 mb-0" id="mw_footer03">
     <div class="container">
         <div class="row">
             <div class="col-sm-6 offset-sm-6">
                 <ul>
-                    <li>{{contenidoFooter['dominio']}}</li>
+                    <li>{{datos.contenido.contentFooter.fraseFooter}}</li>
                 </ul>
             </div>
         </div>
     </div>
 </footer>
 {% endif %}
+</body>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.5/dist/umd/popper.min.js" integrity="sha384-Xe+8cL9oJa6tN/veChSP7q+mnSPaj5Bcu9mPX5F5xIGE0DVittaqT5lorf0EI7Vk" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.min.js" integrity="sha384-ODmDIVzN+pFdexxHEHFBQH3/9/vQ9uori45z4JjnFsRydbmQbmL5t1tQ0culUzyK" crossorigin="anonymous"></script>
         <script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
         <script>window.jQuery || document.write('<script src="js/vendor/jquery-3.6.0.min.js"><\/script>')</script>
         <script src="{{url_for('static',filename='js/vendor.js')}}"></script>
         <script src="{{url_for('static',filename='js/main.js')}}"></script>
-</body>
 {% endblock %}

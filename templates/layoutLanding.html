@@ -1,20 +1,21 @@
 <html>
     <head>
         <title>{% block tittle %} {% endblock %}</title>
+         <style>
         {% block style %}
+       
+
         
         {% endblock %}
-
+        </style>
         {% block codigojs %}
 
         {% endblock %}
+
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor.css') }}">
     </head>
     {% block body %}
-    <body>
-      
-
-        
-        
-    </body>
+  
     {% endblock %}
 </html>

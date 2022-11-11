@@ -8,9 +8,18 @@
                ip = json.ip;
             }
 
+            var currentDate;
+            var time = 0;
+
             document.addEventListener('DOMContentLoaded',()=>{
-                let elements=[]
-                let heightTotal = 0;
+                let elementsScroll=[];
+                const date = new Date();
+                
+                let day = date.getDate();
+                let month = date.getMonth() + 1;
+                let year = date.getFullYear();
+
+                currentDate = `${day}-${month}-${year}`;
 
                 var header = Array.from(document.getElementsByTagName('header'));
 
@@ -18,30 +27,48 @@
 
                 elements = [...header,...elementsAux]
 
-                console.log(elements);
-                
                 elements.forEach(element => {
-                    elements = [...elements, {nombre:element.id, mouseOver:false}]
+                    elementsScroll = [...elementsScroll, {nombre:element.id, mouseOver:false}]
                     element.onmouseover = function(e){
-                        let index = elements.findIndex(x=>x.nombre===e.target.id);
-                        elements[index] = {...elements[index],mouseOver:true}
-
+                        let index = elementsScroll.findIndex(x=>x.nombre===e.target.id);
+                            elementsScroll[index] = {...elementsScroll[index],mouseOver:true}
                     }
                 });
-                console.log(ip)
+            
+                let interval = setInterval(()=>{
+                    time++;
+                },1000)
+
             });
+
+            window.onbeforeunload  = function(){
+                fetch('http://127.0.0.1:4000/registros/almacenaVistas',{
+                'method': 'POST',
+                    headers:{
+                        'Content-Type':'application/json'
+                    },
+                    body:JSON.stringify({
+                        'idLanding':1,
+                        'time':time,
+                        'currentDate':currentDate,
+                        'ip':ip
+                    })
+                    })
+                    .then(res=>localStorage.setItem('res',res))
+                    .catch(err=>console.log(err));
+            }
+
         </script>   
         
         <script type="application/javascript" src="https://api.ipify.org?format=jsonp&callback=getIP"></script>
         <style>
 
-            {{ style }}
-            
         </style>
     </head>
     <body>
         <header id="header">
             header
+            {{datos.contenido.contentHeader.correo}}
         </header>
         <section id="slide">
             seccion 1
