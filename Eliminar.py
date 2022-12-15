@@ -11,8 +11,18 @@ eliminar = Blueprint('eliminar',__name__)
 def delete_cliente(id):
     try:
         cur = mysql.connection.cursor();
-        cur.execute('delete from cliente where idCliente={0}'.format(id))
+
+        cur.execute("update campania set status='suspendido' where idCliente={0}".format(id))
         mysql.connection.commit()
+        
+        cur.execute('select campania.idCampania from campania, cliente where cliente.idCliente = campania.idCliente and cliente.idCliente = {0}'.format(id));
+
+        idCampanias = cur.fetchall()
+
+        for idCampania in idCampanias:
+            cur.execute('update disenio set status="suspendido" where idCampania={0}'.format(idCampania[0]))
+            mysql.connection.commit()
+
         return 'ok',200
     except MySQLdb.Error as e:
         try:
@@ -54,12 +64,12 @@ def delete_conf(id):
     finally:
         cur.close()
 
-@eliminar.route('/eliminarDiseño/<id>', methods=['DELETE','OPTIONS'])
+@eliminar.route('/eliminarDisenio/<id>', methods=['DELETE','OPTIONS'])
 @cross_origin(origin='*',headers=['Authorization'])
 def delete_disenio(id):
     try:
         cur = mysql.connection.cursor();
-        cur.execute('delete from disenio where idDisenio={0}'.format(id))
+        cur.execute("update disenio set status='inactivo' where idDisenio={0}".format(id))
         mysql.connection.commit()
         return 'ok',200
     except MySQLdb.Error as e:
@@ -83,7 +93,10 @@ def delete_disenio(id):
 def delete_campania(id):
     try:
         cur = mysql.connection.cursor();
-        cur.execute('delete from campania where idCampania={0}'.format(id))
+        cur.execute("update campania set status='suspendido' where idCampania={0}".format(id))
+        mysql.connection.commit()
+
+        cur.execute('update disenio set status="suspendido" where idCampania={0}'.format(id))
         mysql.connection.commit()
         return 'ok',200
     except MySQLdb.Error as e:

@@ -157,7 +157,7 @@ function setOwlStageHeight(event) {
 });
 };
 
-//Formbox
+//Formbox btn slide
 $('#myBtn01').on('click', function() {
   $.fancybox.open( $('.mw_contact-01'), {
   type:'inline',
@@ -171,10 +171,44 @@ $('#myBtn02').on('click', function() {
 });
 
 $('#myBtn03').on('click', function() {
+  $.fancybox.open( $('.mw_contact-03'), {
+  type:'inline',
+  });
+});
+
+$('#myBtn04').on('click', function() {
   $.fancybox.open( $('.mw_contact-04'), {
   type:'inline',
   });
 });
+
+
+//Formbox btn action
+$('#myBtn01Action').on('click', function() {
+  $.fancybox.open( $('.mw_contact-01'), {
+  type:'inline',
+  });
+});
+
+$('#myBtn02Action').on('click', function() {
+  $.fancybox.open( $('.mw_contact-02'), {
+  type:'inline',
+  });
+});
+
+$('#myBtn03Action').on('click', function() {
+  $.fancybox.open( $('.mw_contact-03'), {
+  type:'inline',
+  });
+});
+
+$('#myBtn04Action').on('click', function() {
+  $.fancybox.open( $('.mw_contact-04'), {
+  type:'inline',
+  });
+});
+
+
 
 //Date picker
 $(function() {

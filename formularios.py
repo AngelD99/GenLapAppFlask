@@ -33,7 +33,7 @@ class form_cita(FlaskForm):
 
     fecha = DateField(name='fecha', validators=[DataRequired()],render_kw={'onclick':'click()'})
 
-    enviar = SubmitField('Descargar ahora',render_kw={'onclick':'click()'})
+    enviar = SubmitField('Agendar cita',render_kw={'onclick':'click()'})
 
 class form_reservacion(FlaskForm):
     nombre = StringField(name='nombre',render_kw={"placeholder": "Ingresa tu nombre",'onclick':'click()'},

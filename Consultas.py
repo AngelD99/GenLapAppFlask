@@ -24,7 +24,8 @@ def get_clientes():
                 'telefono':cliente[4],
                 'correo':cliente[5],
                 'giro':cliente[6],
-                'producto':cliente[7]
+                'producto':cliente[7],
+                'user':cliente[8]
             }
             data.append(dat)
 
@@ -60,7 +61,8 @@ def get_cliente(id):
             'telefono':cliente[4],
             'correo':cliente[5],
             'giro':cliente[6],
-            'producto':cliente[7]
+            'producto':cliente[7],
+            'status':cliente[8]
         }
 
         return json.dumps(data), 200
@@ -91,7 +93,8 @@ def get_campania(id):
             'nombre':campania[1],
             'fechaIni':campania[2].strftime("%Y-%m-%d"),
             'fechaFin':campania[3].strftime("%Y-%m-%d"),
-            'idCliente':campania[4]
+            'idCliente':campania[4],
+            'status':campania[5]
         }
         return json.dumps(data),200
     except MySQLdb.Error as e:
@@ -113,8 +116,10 @@ def get_campania(id):
 @consultas.route('/configuraciones', methods=['GET'])
 def get_configuraciones():
     try:
-        cur = mysql.connection.cursor();
-        cur.execute('select * from configuracion')
+        cur = mysql.connection.cursor()
+        sql ="select configuracion.idConf,configuracion.nombreConf,configuracion.colorPrim,configuracion.colorSec,configuracion.colorTer,configuracion.colorBtn,configuracion.colorTxtBtn,configuracion.orden,(select tipografia from tipografias where configuracion.idTipografia=tipografias.idTipografia) as TipografiaTitulos,(select tipografia from tipografias where configuracion.idTipografiaContent=tipografias.idTipografia) as TipografiaContent from configuracion"
+
+        cur.execute(sql)
         configuraciones = cur.fetchall()
 
         data = []
@@ -167,6 +172,43 @@ def get_configuracion(id):
                 'colorTer':configuracion[4],
                 'colorBtn':configuracion[5],
                 'colorTxtBtn':configuracion[6],
+                'orden':json.loads(configuracion[7]),
+                'tipografiaTitulos':configuracion[8],
+                'tipografiaContent':configuracion[9]
+            }
+
+        return json.dumps(dat), 200
+    except MySQLdb.Error as e:
+        try:
+            print("MySQL Error [%d]: %s" % (e.args[0], e.args[1]))
+            return 'Error',400
+        except IndexError:
+            print ("MySQL Error: %s" % str(e))
+            return 'Error',400
+    except TypeError as e:
+        print(e)
+        return None
+    except ValueError as e:
+        print(e)
+        return None
+    finally:
+        cur.close()
+
+@consultas.route('/ordenConf/<id>', methods=['GET'])
+def get_orden_conf(id):
+    try:
+        cur = mysql.connection.cursor();
+        cur.execute('select configuracion.orden from configuracion,disenio where configuracion.idConf=disenio.idConf and disenio.idDisenio={0}'.format(id))
+        configuracion = cur.fetchone()
+
+        dat={
+                'idConf':configuracion[0],
+                'nombre':configuracion[1],
+                'colorPrim':configuracion[2],
+                'colorSec':configuracion[3],
+                'colorTer':configuracion[4],
+                'colorBtn':configuracion[5],
+                'colorTxtBtn':configuracion[6],
                 'orden':configuracion[7],
                 'tipografiaTitulos':configuracion[8],
                 'tipografiaContent':configuracion[9]
@@ -193,7 +235,7 @@ def get_configuracion(id):
 def get_campanias():
     try:
         cur = mysql.connection.cursor();
-        cur.execute('select campania.idcampania,campania.nombre,campania.fechaIni,campania.fechaFin,cliente.nombre from campania,cliente where campania.idCliente=cliente.idCliente')
+        cur.execute('select campania.idcampania,campania.nombre,campania.fechaIni,campania.fechaFin,cliente.nombre,campania.status,campania.user from campania,cliente where campania.idCliente=cliente.idCliente')
         campanias = cur.fetchall()
         data=[]
         for campania in campanias:
@@ -202,7 +244,9 @@ def get_campanias():
                 'nombre':campania[1],
                 'fechaIni':campania[2].strftime("%Y-%m-%d"),
                 'fechaFin':campania[3].strftime("%Y-%m-%d"),
-                'cliente':campania[4]
+                'cliente':campania[4],
+                'status':campania[5],
+                'user':campania[6]
             }
             data.append(dat)
 
@@ -227,7 +271,7 @@ def get_campanias():
 def get_disenios_campania(id):
     try:
         cur = mysql.connection.cursor();
-        cur.execute('select disenio.idDisenio, disenio.nombre,configuracion.nombreConf,campania.nombre, cliente.nombre from disenio, configuracion,campania,cliente where disenio.idcampania=campania.idCampania and disenio.idConf=configuracion.idConf and campania.idCampania={0} and cliente.idCliente=campania.idCliente'.format(id))
+        cur.execute('select disenio.idDisenio, disenio.nombre,configuracion.nombreConf,campania.nombre, disenio.status,cliente.giro from disenio, configuracion,campania,cliente where disenio.idcampania=campania.idCampania and disenio.idConf=configuracion.idConf and campania.idCampania={0} and cliente.idCliente=campania.idCliente'.format(id))
         disenios = cur.fetchall()
 
         dataDisenio = []
@@ -238,7 +282,8 @@ def get_disenios_campania(id):
                 'nombreDisenio':disenio[1],
                 'nombreConf':disenio[2],
                 'nombreCampania':disenio[3],
-                'cliente':disenio[4]
+                'status':disenio[4],
+                'giro':disenio[5]
             }
             dataDisenio.append(dat)
 
@@ -493,14 +538,15 @@ def get_secciones():
             }
             dataFooter.append(dat)
 
-        cur.execute('select idConf, nombreConf from configuracion')
+        cur.execute('select idConf, nombreConf,orden from configuracion')
         configuracion = cur.fetchall()
 
         dataNombreConf=[]
         for configur in configuracion:
             dat = {
                 'idConf':configur[0],
-                'configuracion':configur[1]
+                'configuracion':configur[1],
+                'orden':json.loads(configur[2])
             }
             dataNombreConf.append(dat)
 
@@ -624,14 +670,14 @@ def get_heatmap(idDisenio):
             }
 
             dataConf = {
-                'idConf':heatmap[12],
-                'nombreConf':heatmap[13],
-                'colorPrim':heatmap[14],
-                'colorSec':heatmap[15],
-                'colorTer':heatmap[16],
-                'colorBtn':heatmap[17],
-                'colorTxtBtn':heatmap[18],
-                'orden':json.loads(heatmap[19])
+                'idConf':heatmap[13],
+                'nombreConf':heatmap[14],
+                'colorPrim':heatmap[15],
+                'colorSec':heatmap[16],
+                'colorTer':heatmap[17],
+                'colorBtn':heatmap[18],
+                'colorTxtBtn':heatmap[19],
+                'orden':json.loads(heatmap[20])
             }
 
     
@@ -717,6 +763,74 @@ def get_contenido(nombre):
         }
 
         return datos,200
+    except MySQLdb.Error as e:
+        try:
+            print("MySQL Error [%d]: %s" % (e.args[0], e.args[1]))
+            return 'Error',400
+        except IndexError:
+            print ("MySQL Error: %s" % str(e))
+            return 'Error',400
+    except TypeError as e:
+        print(e)
+        return None
+    except ValueError as e:
+        print(e)
+        return None
+    finally:
+        cur.close()
+
+@consultas.route('/checkActiveCliente/<idCliente>',methods=['GET'])
+def check_active_cliente(idCliente):
+    try:
+        cur = mysql.connection.cursor();
+        cur.execute('select status from campania where idCliente={0}'.format(idCliente));
+        status = cur.fetchall()
+
+        result = all(element[0] == 'inactivo' for element in status)
+
+        resultFinalizado = all(element[0] == 'finalizado' for element in status)
+
+        resultSuspendido = all(element[0] == 'suspendido' for element in status)
+
+        if result==True:
+            return json.dumps('inactivo'),200
+        elif resultFinalizado==True:
+            return json.dumps('finalizado'),200
+        elif resultSuspendido==True:
+            return json.dumps('suspendido'),200
+        else: 
+            return json.dumps('activo'),200
+
+    except MySQLdb.Error as e:
+        try:
+            print("MySQL Error [%d]: %s" % (e.args[0], e.args[1]))
+            return 'Error',400
+        except IndexError:
+            print ("MySQL Error: %s" % str(e))
+            return 'Error',400
+    except TypeError as e:
+        print(e)
+        return None
+    except ValueError as e:
+        print(e)
+        return None
+    finally:
+        cur.close()
+
+@consultas.route('/checkActiveCampania/<idCampania>',methods=['GET'])
+def check_active_campania(idCampania):
+    try:
+        cur = mysql.connection.cursor();
+        cur.execute('select status from disenio where idCampania={0}'.format(idCampania));
+        status = cur.fetchall()
+
+        result = all(element[0] == 'inactivo' for element in status)
+
+        if result==True:
+            return json.dumps('inactivo'),200
+        else: 
+            return json.dumps('activo'),200
+
     except MySQLdb.Error as e:
         try:
             print("MySQL Error [%d]: %s" % (e.args[0], e.args[1]))

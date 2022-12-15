@@ -1,14 +1,62 @@
 
 from turtle import color
-from flask import Blueprint, request
+from flask import Blueprint, request,redirect,url_for
 from configuracion import mysql,mail
 from helpers import *
 import json
 import MySQLdb
 from flask_cors import cross_origin
 from flask_mail import Message
+from formularios import *
+import os
+from werkzeug.utils import secure_filename 
 
 registros = Blueprint('registros',__name__)
+
+@registros.route('/uploadLogo', methods=['POST'])
+def fileUpload():
+    
+    f = request.files['logo']
+    filename = secure_filename(f.filename)
+    f.save(os.path.join(registros.root_path, 'static/images', 'clientLogos', filename))
+
+    return json.dumps(filename),200
+
+@registros.route('/uploadImgContent/<idDisenio>', methods=['POST'])
+def img_content(idDisenio):
+    nombreDisenio = ''
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute('select nombre from disenio where idDisenio={0}'.format(idDisenio))
+        nombreDisenio = cur.fetchone()[0];
+        f = request.files['img']
+        filename = secure_filename(f.filename)
+        print(f);
+        print(nombreDisenio)
+        if os.path.isdir(os.path.join(registros.root_path+"\static\images\imagesContent\\"+nombreDisenio)):            
+            f.save(os.path.join(registros.root_path, 'static\images', 'imagesContent\\'+nombreDisenio, filename))
+        else:
+            os.makedirs(os.path.join(registros.root_path+"\static\images\imagesContent\\"+nombreDisenio))
+            f.save(os.path.join(registros.root_path, 'static\images', 'imagesContent\\'+nombreDisenio, filename))
+
+        return json.dumps(filename),200
+    except MySQLdb.Error as e:
+        try:
+            print("MySQL Error [%d]: %s" % (e.args[0], e.args[1]))
+            return 'Error',400
+        except IndexError:
+            print ("MySQL Error: %s" % str(e))
+            return 'Error',400
+    except TypeError as e:
+        print(e)
+        return None
+    except ValueError as e:
+        print(e)
+        return None
+    finally:
+        cur.close()
+    
+    
 
 @registros.route('/almacenaUsuario',methods=['POST','GET'])
 @cross_origin(origin='*',headers=['Authorization'])
@@ -39,6 +87,7 @@ def insert_usuario():
     finally:
         cur.close()
 
+
 @registros.route('/almacenaCliente',methods=['POST','GET'])
 @cross_origin(origin='*',headers=['Authorization'])
 def insert_cliente():
@@ -49,10 +98,12 @@ def insert_cliente():
     correo = request.json.get('correo')
     giro = request.json.get('giro')
     producto = request.json.get('producto')
+    user = request.json.get('user')
+
     try:
-        sql = 'insert into cliente (nombre, logo, direccion, telefono, correo, giro, producto) values (%s,%s,%s,%s,%s,%s,%s)'
+        sql = 'insert into cliente (nombre, logo, direccion, telefono, correo, giro, producto,user) values (%s,%s,%s,%s,%s,%s,%s,%s)'
         cur = mysql.connection.cursor()
-        cur.execute(sql,(nombre,logo,direccion,telefono,correo,giro,producto))
+        cur.execute(sql,(nombre,logo,direccion,telefono,correo,giro,producto,user))
         mysql.connection.commit()
         return 'ok',200
     except MySQLdb.Error as e:
@@ -78,10 +129,13 @@ def insert_campania():
     fechaIni = request.json.get('fechaIni')
     fechaFin = request.json.get('fechaFin')
     idCliente = request.json.get('idCliente')
+    status = request.json.get('status')
+    user = request.json.get('user')
+
     try:
-        sql = 'insert into campania (nombre, fechaIni,fechaFin,idCliente) values (%s,%s,%s,%s)'
+        sql = 'insert into campania (nombre, fechaIni,fechaFin,idCliente,status,user) values (%s,%s,%s,%s,%s,%s)'
         cur = mysql.connection.cursor()
-        cur.execute(sql,(nombre,fechaIni,fechaFin,idCliente))
+        cur.execute(sql,(nombre,fechaIni,fechaFin,idCliente,status,user))
         mysql.connection.commit()
         return 'ok',200
     except MySQLdb.Error as e:
@@ -136,97 +190,103 @@ def insert_conf():
         cur.close()
         
 
-@registros.route('/registrarInfoLP/<string:idDisenio>')
+@registros.route('/registrarInfoLP/<int:idDisenio>', methods=['POST'])
 @cross_origin(origin='*',headers=['Authorization'])
 def insert_info(idDisenio):
     try:
         cur = mysql.connection.cursor()
-        cur.execute('select idFormulario from disenio where idDisenio={0}'.format(idDisenio))
+        cur.execute('select idFormularios from disenio where idDisenio={0}'.format(idDisenio))
         idForm = eliminarCaracteres(str(cur.fetchone()))
-
-        cur.execute('select elementos from testimonios where idTestimonio={0}'.format(idForm))
-        contenidoForm = eliminarVacios(Convert(str(cur.fetchall())))
-
-        sql='insert into infoFormulario (idDisenio,idFormulario,elementosFormulario,datosIngresados) values (%s,%s,%s,%s)'
 
         #el correo sender probablemente sera un correo de muchaweb.
         #el recipiente se debe de obtener de la base de datos, debe ser del cliente a quien le pertenece el correo
         if idForm == '1':
-            nombre = request.json.get('nombre')
-            correo = request.json.get('correo')
-            telefono = request.json.get('telefono')
+            form = form_basico();
+            if(form.validate_on_submit):
+                nombre = form.nombre.data
+                correo = form.correo.data
+                telefono = form.telefono.data
 
-            datos = {
-                'nombre':nombre,
-                'correo':correo,
-                'telefono':telefono
-                }
-
-            msg = Message('Prueba flask gmail', sender = 'elqueenviaCorreo@gmail.com', recipients = ['correoAEnviar@gmail.com'])
-            msg.body = "Cuerpo del correo a enviar"
-            mail.send(msg)
+                datos = {
+                    'nombre':nombre,
+                    'correo':correo,
+                    'telefono':telefono
+                    }
+                print('entro')
+                #msg = Message('Prueba flask gmail', sender = 'elqueenviaCorreo@gmail.com', recipients = ['correoAEnviar@gmail.com'])
+                #msg.body = "Cuerpo del correo a enviar"
+                #mail.send(msg)
 
         if idForm == '2':
-            nombre = request.json.get('nombre')
-            correo = request.json.get('correo')
+            form = form_descargas();
+            if form.validate_on_submit:
+                nombre = form.nombre.data
+                correo = form.correo.data
 
-            datos = {
-                'nombre':nombre,
-                'correo':nombre
-                }
-
-            msg = Message('Prueba flask gmail', sender = 'elqueenviaCorreo@gmail.com', recipients = ['correoAEnviar@gmail.com'])
-            msg.body = "Cuerpo de correo a enviar"
-            mail.send(msg)
+                datos = {
+                    'nombre':nombre,
+                    'correo':correo
+                    }
+                #msg = Message('Prueba flask gmail', sender = 'elqueenviaCorreo@gmail.com', recipients = ['correoAEnviar@gmail.com'])
+                #msg.body = "Cuerpo de correo a enviar"
+                #mail.send(msg)
 
 
         if idForm == '3':
-            nombre = request.json.get('nombre')
-            correo = request.json.get('correo')
-            telefono = request.json.get('telefono')
-            horario = request.json.get('horario')
-            fecha = request.json.get('fecha')
+            form = form_cita()
 
-            datos = {
-                'nombre':nombre,
-                'correo':correo,
-                'telefono':telefono,
-                'horario':horario,
-                'fecha':fecha
-                }
+            if form.validate_on_submit:
+                nombre = request.json.get('nombre')
+                correo = request.json.get('correo')
+                telefono = request.json.get('telefono')
+                horario = request.json.get('horario')
+                fecha = request.json.get('fecha')
 
-            msg = Message('Prueba flask gmail', sender = 'elqueenviaCorreo@gmail.com', recipients = ['correoAEnviar@gmail.com'])
-            msg.body = "Cuerpo del correo a enviar"
-            mail.send(msg)
+                datos = {
+                    'nombre':nombre,
+                    'correo':correo,
+                    'telefono':telefono,
+                    'horario':horario,
+                    'fecha':fecha
+                    }
+
+                #msg = Message('Prueba flask gmail', sender = 'elqueenviaCorreo@gmail.com', recipients = ['correoAEnviar@gmail.com'])
+                #msg.body = "Cuerpo del correo a enviar"
+                #mail.send(msg)
 
         if idForm == '4':
-            nombre = request.json.get('nombre')
-            correo = request.json.get('correo')
-            destino = request.json.get('destino')
-            fechaLlegada = request.json.get('fechaLlegada')
-            fechaSalida = request.json.get('fechaSalida')
-            numDias = request.json.get('numDias')
-            numNinios = request.json.get('numNinios')
-            numAdultos = request.json.get('numAdultos')
 
-            datos = {
-                'nombre':nombre,
-                'correo':correo,
-                'destino':destino,
-                'fechaLlegada':fechaLlegada,
-                'fechaSalida':fechaSalida,
-                'numDias':numDias,
-                'numNinios':numNinios,
-                'numAdultos':numAdultos
-                }
+            form = form_reservacion()
 
-            msg = Message('Prueba flask gmail', sender = 'elqueenviaCorreo@gmail.com', recipients = ['correoAEnviar@gmail.com'])
-            msg.body = "Cuerpo del correo a enviar"
-            mail.send(msg)
+            if form.validate_on_submit():
+                nombre = request.json.get('nombre')
+                correo = request.json.get('correo')
+                destino = request.json.get('destino')
+                fechaLlegada = request.json.get('fechaLlegada')
+                fechaSalida = request.json.get('fechaSalida')
+                numDias = request.json.get('numDias')
+                numNinios = request.json.get('numNinios')
+                numAdultos = request.json.get('numAdultos')
 
-        cur.execute(sql,idDisenio,idForm,json.dumps(contenidoForm),json.dumps(datos))
+                datos = {
+                    'nombre':nombre,
+                    'correo':correo,
+                    'destino':destino,
+                    'fechaLlegada':fechaLlegada,
+                    'fechaSalida':fechaSalida,
+                    'numDias':numDias,
+                    'numNinios':numNinios,
+                    'numAdultos':numAdultos
+                    }
+
+                #msg = Message('Prueba flask gmail', sender = 'elqueenviaCorreo@gmail.com', recipients = ['correoAEnviar@gmail.com'])
+                #msg.body = "Cuerpo del correo a enviar"
+                #mail.send(msg)
+
+        sql='insert into infoFormulario (idDisenio,idFormulario,datosIngresados) values (%s,%s,%s)'
+        cur.execute(sql,(idDisenio,int(idForm),json.dumps(datos)))
         mysql.connection.commit()
-        return 'ok',200
+        return redirect(url_for('registro_exitoso')) ,200
 
     except MySQLdb.Error as e:
         try:
@@ -258,11 +318,12 @@ def insert_disenio():
     idAccion = request.json.get('accion')
     idFooter = request.json.get('footer')
     idConf = request.json.get('configuracion')
+    status = request.json.get('status')
 
     try:
-        sql = 'insert into disenio (nombre, idCampania,idHeader,idSlide,idAbout,idFormularios,idTestimonio,idBeneficios,idFooter,idConf,idAccion) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
+        sql = 'insert into disenio (nombre, idCampania,idHeader,idSlide,idAbout,idFormularios,idTestimonio,idBeneficios,idFooter,idConf,idAccion,status) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
         cur = mysql.connection.cursor()
-        cur.execute(sql,(nombre,idCampania,idHeader,idSlide,idAbout,idFormulario,idTestimonio,idBeneficio,idFooter,idConf,idAccion))
+        cur.execute(sql,(nombre,idCampania,idHeader,idSlide,idAbout,idFormulario,idTestimonio,idBeneficio,idFooter,idConf,idAccion,status))
         mysql.connection.commit()
         return 'ok',200
     except MySQLdb.Error as e:
@@ -297,7 +358,8 @@ def insert_contenido_header(idDisenio):
         contenidoFooter = request.json.get('contentFooter')
         contenidoTestimonios = request.json.get('contentTestimonios')
         contenidoFormulario = request.json.get('contentFormulario')
-        contenidoStyle = request.json.get('contentStyle');
+        contenidoPixel = request.json.get('contentPixel')
+        contenidoStyle = request.json.get('contentStyle')
 
         contenido={
             'contacto':contacto,
@@ -309,6 +371,7 @@ def insert_contenido_header(idDisenio):
             'contentFooter':contenidoFooter,
             'contentTestimonios':contenidoTestimonios,
             'contentForm':contenidoFormulario,
+            'contentPixel':contenidoPixel,
             'contentStyle':contenidoStyle
         }
 

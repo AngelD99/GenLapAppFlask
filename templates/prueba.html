@@ -10,6 +10,10 @@
 
             var currentDate;
             var time = 0;
+            
+            function setDatos(disenios){
+                console.log(disenios);
+            }
 
             document.addEventListener('DOMContentLoaded',()=>{
                 let elementsScroll=[];
@@ -65,7 +69,7 @@
 
         </style>
     </head>
-    <body>
+    <body onload="setDatos({{datos.disenios}})">
         <header id="header">
             header
             {{datos.contenido.contentHeader.correo}}
